@@ -17,7 +17,8 @@
     "clean": "rm -rf dist .turbo *.tsbuildinfo"
   },
   "dependencies": {
-    "@gym-app/domain": "workspace:*"
+    "@gym-app/domain": "workspace:*",
+    "drizzle-orm": "0.41.0"
   },
   "devDependencies": {
     "typescript": "~5.8.3"
