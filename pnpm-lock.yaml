@@ -1,0 +1,148 @@
+lockfileVersion: '9.0'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .:
+    devDependencies:
+      typescript:
+        specifier: ^5.5.3
+        version: 5.8.3
+
+  apps/mobile:
+    dependencies:
+      '@gym-app/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
+      '@gym-app/fitness-logic':
+        specifier: workspace:*
+        version: link:../../packages/fitness-logic
+      '@gym-app/sync':
+        specifier: workspace:*
+        version: link:../../packages/sync
+      '@gym-app/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
+    devDependencies:
+      typescript:
+        specifier: ~5.8.3
+        version: 5.8.3
+
+  apps/worker:
+    dependencies:
+      '@gym-app/data-sources':
+        specifier: workspace:*
+        version: link:../../packages/data-sources
+      '@gym-app/domain':
+        specifier: workspace:*
+        version: link:../../packages/domain
+      '@gym-app/fitness-logic':
+        specifier: workspace:*
+        version: link:../../packages/fitness-logic
+      '@gym-app/transforms':
+        specifier: workspace:*
+        version: link:../../packages/transforms
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.18
+        version: 22.19.19
+      typescript:
+        specifier: ~5.8.3
+        version: 5.8.3
+
+  packages/data-sources:
+    dependencies:
+      '@gym-app/domain':
+        specifier: workspace:*
+        version: link:../domain
+      '@gym-app/transforms':
+        specifier: workspace:*
+        version: link:../transforms
+    devDependencies:
+      '@types/node':
+        specifier: ^22.15.18
+        version: 22.19.19
+      typescript:
+        specifier: ~5.8.3
+        version: 5.8.3
+
+  packages/domain:
+    dependencies:
+      zod:
+        specifier: ^3.25.17
+        version: 3.25.76
+    devDependencies:
+      typescript:
+        specifier: ~5.8.3
+        version: 5.8.3
+
+  packages/fitness-logic:
+    dependencies:
+      '@gym-app/domain':
+        specifier: workspace:*
+        version: link:../domain
+    devDependencies:
+      typescript:
+        specifier: ~5.8.3
+        version: 5.8.3
+
+  packages/sync:
+    dependencies:
+      '@gym-app/domain':
+        specifier: workspace:*
+        version: link:../domain
+    devDependencies:
+      typescript:
+        specifier: ~5.8.3
+        version: 5.8.3
+
+  packages/transforms:
+    dependencies:
+      '@gym-app/domain':
+        specifier: workspace:*
+        version: link:../domain
+    devDependencies:
+      typescript:
+        specifier: ~5.8.3
+        version: 5.8.3
+
+  packages/ui:
+    dependencies:
+      '@gym-app/domain':
+        specifier: workspace:*
+        version: link:../domain
+    devDependencies:
+      typescript:
+        specifier: ~5.8.3
+        version: 5.8.3
+
+packages:
+
+  '@types/node@22.19.19':
+    resolution: {integrity: sha512-dyh/xO2Fh5bYrfWaaqGrRQQGkNdmYw6AmaAUvYeUMNTWQtvb796ikLdmTchRmOlOiIJ1TDXfWgVx1QkUlQ6Hew==}
+
+  typescript@5.8.3:
+    resolution: {integrity: sha512-p1diW6TqL9L07nNxvRMM7hMMw4c5XOo/1ibL4aAIGmSAt9slTE1Xgw5KWuof2uTOvCg9BY7ZRi+GaF+7sfgPeQ==}
+    engines: {node: '>=14.17'}
+    hasBin: true
+
+  undici-types@6.21.0:
+    resolution: {integrity: sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==}
+
+  zod@3.25.76:
+    resolution: {integrity: sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ==}
+
+snapshots:
+
+  '@types/node@22.19.19':
+    dependencies:
+      undici-types: 6.21.0
+
+  typescript@5.8.3: {}
+
+  undici-types@6.21.0: {}
+
+  zod@3.25.76: {}
