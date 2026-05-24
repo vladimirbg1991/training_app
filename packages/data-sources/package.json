@@ -1,0 +1,27 @@
+{
+  "name": "@gym-app/data-sources",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --build",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist .turbo *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@gym-app/domain": "workspace:*",
+    "@gym-app/transforms": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.18",
+    "typescript": "~5.8.3"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "name": "@gym-app/mobile",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "echo \"mobile build handled by EAS\"",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "clean": "rm -rf dist .turbo .expo *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@gym-app/domain": "workspace:*",
+    "@gym-app/fitness-logic": "workspace:*",
+    "@gym-app/sync": "workspace:*",
+    "@gym-app/ui": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "~5.8.3"
+  }
+}

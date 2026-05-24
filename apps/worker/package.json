@@ -1,0 +1,24 @@
+{
+  "name": "@gym-app/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "scripts": {
+    "build": "tsc --build",
+    "dev": "tsc --watch",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "clean": "rm -rf dist .turbo *.tsbuildinfo"
+  },
+  "dependencies": {
+    "@gym-app/domain": "workspace:*",
+    "@gym-app/fitness-logic": "workspace:*",
+    "@gym-app/data-sources": "workspace:*",
+    "@gym-app/transforms": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.18",
+    "typescript": "~5.8.3"
+  }
+}
