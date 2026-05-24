@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "Pulse",
+    "slug": "pulse",
+    "version": "0.1.0",
+    "scheme": "gymapp",
+    "sdkVersion": "54.0.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "platforms": ["ios", "android"],
+    "ios": {
+      "bundleIdentifier": "com.pulse.fitness",
+      "supportsTablet": false
+    },
+    "android": {
+      "package": "com.pulse.fitness",
+      "adaptiveIcon": {
+        "backgroundColor": "#0A1410"
+      }
+    },
+    "plugins": [
+      "expo-router",
+      "expo-font",
+      "expo-haptics",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0A1410"
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

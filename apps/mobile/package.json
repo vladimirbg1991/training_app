@@ -1,21 +1,52 @@
 {
   "name": "@gym-app/mobile",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "private": true,
-  "type": "module",
+  "main": "expo-router/entry",
   "scripts": {
-    "build": "echo \"mobile build handled by EAS\"",
+    "start": "expo start --dev-client",
+    "android": "expo run:android",
+    "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
-    "clean": "rm -rf dist .turbo .expo *.tsbuildinfo"
+    "clean": "rm -rf dist .turbo .expo *.tsbuildinfo node_modules/.cache"
   },
+  "_versionNote": "Versions are approximate for Expo SDK 54. Run `npx expo install --fix` after initial install to align all Expo package versions with the SDK.",
   "dependencies": {
+    "@clerk/clerk-expo": "2.10.0",
     "@gym-app/domain": "workspace:*",
     "@gym-app/fitness-logic": "workspace:*",
     "@gym-app/sync": "workspace:*",
-    "@gym-app/ui": "workspace:*"
+    "@gym-app/ui": "workspace:*",
+    "@shopify/flash-list": "2.1.0",
+    "@tabler/icons-react-native": "3.31.0",
+    "@tanstack/react-query": "5.80.0",
+    "expo": "~54.0.0",
+    "expo-constants": "~17.1.0",
+    "expo-font": "~13.3.0",
+    "expo-haptics": "~14.1.0",
+    "expo-linking": "~7.1.0",
+    "expo-router": "~5.0.0",
+    "expo-splash-screen": "~0.33.0",
+    "expo-status-bar": "~2.2.0",
+    "expo-system-ui": "~4.2.0",
+    "nativewind": "4.1.23",
+    "react": "19.0.0",
+    "react-native": "0.79.2",
+    "react-native-css-interop": "0.1.20",
+    "react-native-gesture-handler": "~2.25.0",
+    "react-native-mmkv": "3.2.0",
+    "react-native-reanimated": "~3.17.4",
+    "react-native-safe-area-context": "~5.4.0",
+    "react-native-screens": "~4.10.0",
+    "react-native-svg": "~15.11.0",
+    "zustand": "5.0.5"
   },
   "devDependencies": {
-    "typescript": "~5.8.3"
+    "@babel/core": "7.27.1",
+    "@types/react": "19.1.0",
+    "babel-preset-expo": "~12.1.0",
+    "tailwindcss": "3.4.17",
+    "typescript": "5.8.3"
   }
 }
