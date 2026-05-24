@@ -1,22 +1,14 @@
 {
-  "name": "gym-app",
-  "private": true,
-  "packageManager": "pnpm@9.15.4",
+  "name": "training_app",
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.js",
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev",
-    "lint": "turbo run lint",
-    "typecheck": "turbo run typecheck",
-    "test": "turbo run test",
-    "clean": "turbo run clean",
-    "format": "prettier --write \"**/*.{ts,tsx,js,mjs,json,md}\""
+    "build": "tsc"
   },
+  "dependencies": {},
   "devDependencies": {
-    "turbo": "^2.5.0",
-    "typescript": "~5.8.3",
-    "eslint": "^9.27.0",
-    "@eslint/js": "^9.27.0",
-    "typescript-eslint": "^8.32.1",
-    "prettier": "^3.5.3"
-  }
+    "typescript": "^5.5.3"
+  },
+  "private": true
 }
