@@ -1,16 +1,35 @@
+import { normalizeToKg, type WeightUnit } from './unit-conversion.js';
+
 interface SetData {
   weightValue: number | null;
+  weightUnit?: WeightUnit | string | null;
   reps: number | null;
   isWarmup: boolean;
+  bodyweightAtTime?: number | null;
+  bodyweightUnit?: WeightUnit | string | null;
 }
 
-/** Calculate volume for a single set: weight × reps. Warmup sets excluded. */
+/**
+ * Calculate volume for a single set: weight x reps. Warmup sets excluded.
+ *
+ * For bodyweight exercises (pull-ups, dips, chin-ups) where weightValue is null,
+ * falls back to bodyweightAtTime so volume is never incorrectly reported as 0.
+ * All values are normalized to kg for consistent cross-unit aggregation.
+ */
 export function setVolume(set: SetData): number {
-  if (set.isWarmup || !set.weightValue || !set.reps) return 0;
-  return set.weightValue * set.reps;
+  if (set.isWarmup || !set.reps) return 0;
+
+  // Use explicit weight if available, fall back to bodyweight for bodyweight exercises
+  const weight = set.weightValue ?? set.bodyweightAtTime ?? 0;
+  if (weight <= 0) return 0;
+
+  const unit = (set.weightValue != null ? set.weightUnit : set.bodyweightUnit) as WeightUnit | undefined;
+  const normalizedWeight = unit ? normalizeToKg(weight, unit) : weight;
+
+  return normalizedWeight * set.reps;
 }
 
-/** Total volume across multiple sets. */
+/** Total volume across multiple sets (normalized to kg). */
 export function totalVolume(sets: SetData[]): number {
   return sets.reduce((sum, set) => sum + setVolume(set), 0);
 }

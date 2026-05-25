@@ -11,4 +11,5 @@ export const BODY_PART_MAP: Record<MuscleGroup, string[]> = {
   shoulders: ['shoulders'],
   arms: ['upper arms', 'lower arms'],
   core: ['core'],
+  full_body: ['full body'],
 };

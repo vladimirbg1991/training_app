@@ -24,6 +24,7 @@ import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
 import type { AbstractPowerSyncDatabase } from '@powersync/react-native';
 import type { WeightUnit } from '@gym-app/domain';
+import { normalizeToKg } from '@gym-app/fitness-logic';
 
 import { saveSnapshot, loadSnapshot, clearSnapshot } from './mmkv';
 
@@ -79,6 +80,8 @@ export interface ConfirmedSet {
   isWarmup: boolean;
   isPersonalRecord: boolean;
   performedAt: string; // ISO 8601
+  bodyweightAtTime: number | null;
+  bodyweightUnit: 'kg' | 'lb' | null;
 }
 
 export interface DraftSet {
@@ -230,11 +233,6 @@ function createInitialState(): WorkoutState {
 // Constants
 // ============================================================================
 
-const KG_PER_LB = 0.45359237;
-function toKg(value: number, unit: string): number {
-  return unit === 'lb' ? value * KG_PER_LB : value;
-}
-
 const MAX_UNDO_BUFFER_SIZE = 5;
 const MAX_UNDO_AGE_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -328,8 +326,10 @@ export const workoutStore = createStore<WorkoutState & WorkoutActions>()(
         for (const s of sets) {
           if (!s.isWarmup) {
             totalSets += 1;
-            if (s.weightValue !== null && s.reps !== null) {
-              totalVolume += toKg(s.weightValue, s.weightUnit) * s.reps;
+            const weight = s.weightValue ?? s.bodyweightAtTime ?? 0;
+            const unit = s.weightValue != null ? s.weightUnit : s.bodyweightUnit;
+            if (weight > 0 && s.reps !== null && s.reps > 0) {
+              totalVolume += normalizeToKg(weight, (unit ?? 'kg') as 'kg' | 'lb') * s.reps;
             }
           }
         }
@@ -602,6 +602,8 @@ export const workoutStore = createStore<WorkoutState & WorkoutActions>()(
         isWarmup: draft.isWarmup,
         isPersonalRecord: false, // computed later
         performedAt: now,
+        bodyweightAtTime: bodyweightAtTime,
+        bodyweightUnit: (bodyweightUnit as 'kg' | 'lb') ?? null,
       };
 
       set((s) => {
@@ -773,9 +775,12 @@ export const workoutStore = createStore<WorkoutState & WorkoutActions>()(
         is_warmup: number;
         is_personal_record: number;
         performed_at: string;
+        bodyweight_at_time: number | null;
+        bodyweight_unit: string | null;
       }>(
         `SELECT id, exercise_id, set_index, weight_value, weight_unit,
-                reps, pin_position, is_warmup, is_personal_record, performed_at
+                reps, pin_position, is_warmup, is_personal_record, performed_at,
+                bodyweight_at_time, bodyweight_unit
          FROM workout_sets
          WHERE session_id = ? AND user_id = ?
          ORDER BY set_index ASC`,
@@ -800,6 +805,8 @@ export const workoutStore = createStore<WorkoutState & WorkoutActions>()(
           isWarmup: row.is_warmup === 1,
           isPersonalRecord: row.is_personal_record === 1,
           performedAt: row.performed_at,
+          bodyweightAtTime: row.bodyweight_at_time,
+          bodyweightUnit: (row.bodyweight_unit as 'kg' | 'lb') ?? null,
         });
       }
 

@@ -42,6 +42,14 @@ export default function HealthConsentScreen(): React.JSX.Element {
   const { user } = useUser();
   const [loading, setLoading] = useState(false);
 
+  const getUserTypeRoute = (userType: string | undefined): string => {
+    switch (userType) {
+      case 'trainer': return '/(trainer)/(home)';
+      case 'gym': return '/(gym)/(dashboard)';
+      default: return '/(lifter)/(home)';
+    }
+  };
+
   const handleAccept = useCallback(async () => {
     if (!user) return;
     setLoading(true);
@@ -53,8 +61,8 @@ export default function HealthConsentScreen(): React.JSX.Element {
           healthDataConsentAt: new Date().toISOString(),
         },
       });
-      // Navigate to the main app — AuthGate will pick up the user type
-      router.replace('/(lifter)/(home)');
+      const userType = user?.unsafeMetadata?.userType as string | undefined;
+      router.replace(getUserTypeRoute(userType));
     } catch {
       // Silently retry on next app launch
     } finally {
@@ -64,8 +72,9 @@ export default function HealthConsentScreen(): React.JSX.Element {
 
   const handleDecline = useCallback(() => {
     // User can still use the app but body-comp features will be gated
-    router.replace('/(lifter)/(home)');
-  }, [router]);
+    const userType = user?.unsafeMetadata?.userType as string | undefined;
+    router.replace(getUserTypeRoute(userType));
+  }, [user, router]);
 
   const handlePrivacyPolicy = useCallback(() => {
     Linking.openURL('https://pulse.fitness/privacy'); // placeholder URL

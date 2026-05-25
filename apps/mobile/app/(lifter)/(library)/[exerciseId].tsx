@@ -1,5 +1,5 @@
 import { View, Text, Pressable, ScrollView, ActivityIndicator } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   IconChevronLeft,
@@ -9,8 +9,10 @@ import {
   IconAlertCircle,
 } from '@tabler/icons-react-native';
 import { z } from 'zod';
+import { useCallback } from 'react';
 import { Colors } from '@/constants/colors';
 import { useExercise } from '@/lib/powersync';
+import { useWorkoutStore } from '@/stores/workout-store';
 
 const secondaryMusclesParser = z.array(z.string()).catch([]);
 
@@ -18,6 +20,8 @@ export default function ExerciseDetailScreen(): React.JSX.Element {
   const { exerciseId } = useLocalSearchParams<{ exerciseId: string }>();
   const router = useRouter();
   const { data, isLoading } = useExercise(exerciseId);
+  const workoutStatus = useWorkoutStore((s) => s.status);
+  const addExercise = useWorkoutStore((s) => s.addExercise);
   const exercise = data?.[0];
 
   // --- Loading state ---
@@ -79,6 +83,25 @@ export default function ExerciseDetailScreen(): React.JSX.Element {
   const name = String(exercise.name ?? 'Unknown Exercise');
   const targetMuscle = exercise.target_muscle ? String(exercise.target_muscle) : null;
   const bodyPart = exercise.body_part ? String(exercise.body_part) : null;
+
+  const handleAddToWorkout = useCallback(() => {
+    if (workoutStatus === 'active' && exerciseId) {
+      addExercise({
+        exerciseId,
+        exerciseName: name,
+        equipmentCategory: null,
+        gymEquipmentInstanceId: null,
+        targetSets: 3,
+        targetReps: 10,
+        restSeconds: 90,
+        weightIncrement: 2.5,
+        incrementUnit: 'kg',
+      });
+      router.back();
+    } else {
+      router.push('/(lifter)/(workout)' as Href);
+    }
+  }, [workoutStatus, exerciseId, addExercise, name, router]);
 
   return (
     <SafeAreaView className="flex-1 bg-page">
@@ -160,6 +183,7 @@ export default function ExerciseDetailScreen(): React.JSX.Element {
         {/* Add to workout CTA */}
         <View className="mx-4 mb-4">
           <Pressable
+            onPress={handleAddToWorkout}
             className="bg-accent rounded-btn min-h-btn items-center justify-center flex-row gap-2"
             accessibilityRole="button"
             accessibilityLabel={`Add ${name} to workout`}

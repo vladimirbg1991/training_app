@@ -52,6 +52,6 @@ export type CreateCustomExercise = z.infer<typeof CreateCustomExerciseSchema>;
 
 // Major muscle groups used in the UI
 export const MUSCLE_GROUPS = [
-  'chest', 'back', 'legs', 'shoulders', 'arms', 'core',
+  'chest', 'back', 'legs', 'shoulders', 'arms', 'core', 'full_body',
 ] as const;
 export type MuscleGroup = (typeof MUSCLE_GROUPS)[number];

@@ -179,7 +179,14 @@ export default function CalendarStreakScreen() {
       ? `SELECT
            DATE(s.started_at) AS day,
            COUNT(DISTINCT s.id) AS sessions,
-           COALESCE(SUM(CASE WHEN ws.is_warmup = 0 THEN (CASE WHEN ws.weight_unit = 'lb' THEN ws.weight_value * 0.45359237 ELSE ws.weight_value END) * ws.reps ELSE 0 END), 0) AS total_volume,
+           COALESCE(SUM(CASE WHEN ws.is_warmup = 0 THEN
+             (CASE
+               WHEN ws.weight_value IS NOT NULL THEN
+                 CASE WHEN ws.weight_unit = 'lb' THEN ws.weight_value * 0.45359237 ELSE ws.weight_value END
+               WHEN ws.bodyweight_at_time IS NOT NULL THEN
+                 CASE WHEN ws.bodyweight_unit = 'lb' THEN ws.bodyweight_at_time * 0.45359237 ELSE ws.bodyweight_at_time END
+               ELSE 0
+             END) * ws.reps ELSE 0 END), 0) AS total_volume,
            COALESCE(SUM(s.duration_seconds), 0) AS total_duration,
            COUNT(CASE WHEN ws.is_warmup = 0 THEN 1 END) AS total_sets,
            MAX(CASE WHEN ws.is_personal_record = 1 THEN 1 ELSE 0 END) AS has_pr
@@ -270,7 +277,14 @@ export default function CalendarStreakScreen() {
     userId && selectedDay
       ? `SELECT
            s.id, s.name, s.started_at, s.duration_seconds,
-           COALESCE(SUM(CASE WHEN ws.is_warmup = 0 THEN (CASE WHEN ws.weight_unit = 'lb' THEN ws.weight_value * 0.45359237 ELSE ws.weight_value END) * ws.reps ELSE 0 END), 0) AS total_volume,
+           COALESCE(SUM(CASE WHEN ws.is_warmup = 0 THEN
+             (CASE
+               WHEN ws.weight_value IS NOT NULL THEN
+                 CASE WHEN ws.weight_unit = 'lb' THEN ws.weight_value * 0.45359237 ELSE ws.weight_value END
+               WHEN ws.bodyweight_at_time IS NOT NULL THEN
+                 CASE WHEN ws.bodyweight_unit = 'lb' THEN ws.bodyweight_at_time * 0.45359237 ELSE ws.bodyweight_at_time END
+               ELSE 0
+             END) * ws.reps ELSE 0 END), 0) AS total_volume,
            COUNT(CASE WHEN ws.is_warmup = 0 THEN 1 END) AS total_sets,
            COUNT(DISTINCT ws.exercise_id) AS exercise_count,
            MAX(CASE WHEN ws.is_personal_record = 1 THEN 1 ELSE 0 END) AS has_pr

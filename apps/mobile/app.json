@@ -9,7 +9,7 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "platforms": ["ios", "android"],
-    "icon": "./assets/icon.png",
+
     "ios": {
       "bundleIdentifier": "com.pulse.fitness",
       "supportsTablet": false,

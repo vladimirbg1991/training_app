@@ -43,8 +43,8 @@ const USER_TYPE_OPTIONS: {
 /** Route for each user type after onboarding selection. */
 const USER_TYPE_ROUTES: Record<UserType, string> = {
   lifter: '/(lifter)/(home)',
-  trainer: '/(lifter)/(home)', // trainer/gym share the lifter shell for v0
-  gym: '/(lifter)/(home)',
+  trainer: '/(trainer)/(home)',
+  gym: '/(gym)/(dashboard)',
 };
 
 export default function UserTypeScreen() {
@@ -64,7 +64,7 @@ export default function UserTypeScreen() {
           userType: selected,
         },
       });
-      router.replace(USER_TYPE_ROUTES[selected]);
+      router.replace('/(auth)/health-consent');
     } catch (error: unknown) {
       const message =
         error instanceof Error ? error.message : 'Something went wrong. Please try again.';

@@ -1,10 +1,5 @@
 import { estimateOneRepMax } from './one-rep-max.js';
-
-const KG_PER_LB = 0.45359237;
-
-function toKg(value: number, unit: string | null): number {
-  return unit === 'lb' ? value * KG_PER_LB : value;
-}
+import { normalizeToKg } from './unit-conversion.js';
 
 interface HistoricalSet {
   weight_value: number | null;
@@ -56,12 +51,12 @@ export function detectPRs(
     return prs;
   }
 
-  const newWeightKg = toKg(newSet.weightValue, newSet.weightUnit);
+  const newWeightKg = normalizeToKg(newSet.weightValue, newSet.weightUnit as 'kg' | 'lb');
   const prs: PRResult[] = [];
 
   // Weight PR: heaviest weight lifted at any rep count (normalized to kg)
   const maxHistoricalWeightKg = Math.max(
-    ...workingSets.map((h) => toKg(h.weight_value!, h.weight_unit)),
+    ...workingSets.map((h) => normalizeToKg(h.weight_value!, (h.weight_unit ?? 'kg') as 'kg' | 'lb')),
   );
   if (newWeightKg > maxHistoricalWeightKg) {
     prs.push({
@@ -74,7 +69,7 @@ export function detectPRs(
 
   // Reps PR: most reps at the same or higher weight (normalized to kg)
   const setsAtSameOrHigherWeight = workingSets.filter(
-    (h) => toKg(h.weight_value!, h.weight_unit) >= newWeightKg,
+    (h) => normalizeToKg(h.weight_value!, (h.weight_unit ?? 'kg') as 'kg' | 'lb') >= newWeightKg,
   );
   if (setsAtSameOrHigherWeight.length > 0) {
     const maxRepsAtWeight = Math.max(
@@ -94,7 +89,7 @@ export function detectPRs(
   const newE1RM = estimateOneRepMax(newWeightKg, newSet.reps);
   const maxHistoricalE1RM = Math.max(
     ...workingSets.map((h) =>
-      estimateOneRepMax(toKg(h.weight_value!, h.weight_unit), h.reps!),
+      estimateOneRepMax(normalizeToKg(h.weight_value!, (h.weight_unit ?? 'kg') as 'kg' | 'lb'), h.reps!),
     ),
   );
   if (newE1RM > maxHistoricalE1RM) {
@@ -127,10 +122,10 @@ export function isPRPace(
   );
   if (workingSets.length === 0) return true; // First-ever set is always PR pace
 
-  const newE1RM = estimateOneRepMax(toKg(draftWeight, draftWeightUnit), draftReps);
+  const newE1RM = estimateOneRepMax(normalizeToKg(draftWeight, draftWeightUnit as 'kg' | 'lb'), draftReps);
   const maxE1RM = Math.max(
     ...workingSets.map((h) =>
-      estimateOneRepMax(toKg(h.weight_value!, h.weight_unit), h.reps!),
+      estimateOneRepMax(normalizeToKg(h.weight_value!, (h.weight_unit ?? 'kg') as 'kg' | 'lb'), h.reps!),
     ),
   );
   return newE1RM > maxE1RM;

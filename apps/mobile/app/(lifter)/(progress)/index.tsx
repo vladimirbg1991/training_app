@@ -51,6 +51,8 @@ interface ExerciseSetRow {
   weight_unit: string;
   reps: number | null;
   performed_at: string;
+  bodyweight_at_time: number | null;
+  bodyweight_unit: string | null;
 }
 
 interface MuscleCoverageRow {
@@ -75,7 +77,15 @@ function daysAgoISO(days: number): string {
 function useTotalVolume(userId: string, since: string) {
   return useQuery<VolumeRow>(
     userId
-      ? `SELECT SUM(CASE WHEN weight_unit = 'lb' THEN weight_value * 0.45359237 ELSE weight_value END * reps) AS total_volume
+      ? `SELECT SUM(
+           (CASE
+             WHEN weight_value IS NOT NULL THEN
+               CASE WHEN weight_unit = 'lb' THEN weight_value * 0.45359237 ELSE weight_value END
+             WHEN bodyweight_at_time IS NOT NULL THEN
+               CASE WHEN bodyweight_unit = 'lb' THEN bodyweight_at_time * 0.45359237 ELSE bodyweight_at_time END
+             ELSE 0
+           END) * reps
+         ) AS total_volume
          FROM workout_sets
          WHERE user_id = ? AND is_warmup = 0 AND performed_at > ?`
       : `SELECT 1 WHERE 0`,
@@ -97,7 +107,15 @@ function useSessionCount(userId: string, since: string) {
 function usePreviousPeriodVolume(userId: string, periodStart: string, periodEnd: string) {
   return useQuery<VolumeRow>(
     userId
-      ? `SELECT SUM(CASE WHEN weight_unit = 'lb' THEN weight_value * 0.45359237 ELSE weight_value END * reps) AS total_volume
+      ? `SELECT SUM(
+           (CASE
+             WHEN weight_value IS NOT NULL THEN
+               CASE WHEN weight_unit = 'lb' THEN weight_value * 0.45359237 ELSE weight_value END
+             WHEN bodyweight_at_time IS NOT NULL THEN
+               CASE WHEN bodyweight_unit = 'lb' THEN bodyweight_at_time * 0.45359237 ELSE bodyweight_at_time END
+             ELSE 0
+           END) * reps
+         ) AS total_volume
          FROM workout_sets
          WHERE user_id = ? AND is_warmup = 0 AND performed_at > ? AND performed_at <= ?`
       : `SELECT 1 WHERE 0`,
@@ -111,7 +129,15 @@ function useWeeklyVolume(userId: string, weeks: number) {
     userId
       ? `SELECT
            strftime('%Y-W%W', performed_at) AS week_label,
-           SUM(CASE WHEN weight_unit = 'lb' THEN weight_value * 0.45359237 ELSE weight_value END * reps) AS weekly_volume
+           SUM(
+             (CASE
+               WHEN weight_value IS NOT NULL THEN
+                 CASE WHEN weight_unit = 'lb' THEN weight_value * 0.45359237 ELSE weight_value END
+               WHEN bodyweight_at_time IS NOT NULL THEN
+                 CASE WHEN bodyweight_unit = 'lb' THEN bodyweight_at_time * 0.45359237 ELSE bodyweight_at_time END
+               ELSE 0
+             END) * reps
+           ) AS weekly_volume
          FROM workout_sets
          WHERE user_id = ? AND is_warmup = 0 AND performed_at > ?
          GROUP BY week_label
@@ -130,7 +156,7 @@ function useRecentExercises(userId: string) {
          FROM workout_sets ws
          JOIN exercises e ON ws.exercise_id = e.id
          WHERE ws.user_id = ? AND ws.is_warmup = 0 AND ws.performed_at > ?
-           AND ws.weight_value IS NOT NULL AND ws.reps IS NOT NULL`
+           AND (ws.weight_value IS NOT NULL OR ws.bodyweight_at_time IS NOT NULL) AND ws.reps IS NOT NULL`
       : `SELECT 1 WHERE 0`,
     userId ? [userId, since] : [],
   );
@@ -140,10 +166,11 @@ function useRecentExercises(userId: string) {
 function useExerciseSets(userId: string, since: string) {
   return useQuery<ExerciseSetRow>(
     userId
-      ? `SELECT exercise_id, weight_value, weight_unit, reps, performed_at
+      ? `SELECT exercise_id, weight_value, weight_unit, reps, performed_at,
+                bodyweight_at_time, bodyweight_unit
          FROM workout_sets
          WHERE user_id = ? AND is_warmup = 0 AND performed_at > ?
-           AND weight_value IS NOT NULL AND reps IS NOT NULL
+           AND (weight_value IS NOT NULL OR bodyweight_at_time IS NOT NULL) AND reps IS NOT NULL
          ORDER BY performed_at ASC`
       : `SELECT 1 WHERE 0`,
     userId ? [userId, since] : [],
@@ -208,14 +235,15 @@ function computeExerciseTrends(
     let recentBestE1RM = 0;
     let recentBestUnit = defaultUnit as string;
     for (const s of recentSets) {
-      const e1rm = estimateOneRepMax(s.weight_value ?? 0, s.reps ?? 0);
+      const weight = s.weight_value ?? s.bodyweight_at_time ?? 0;
+      const e1rm = estimateOneRepMax(weight, s.reps ?? 0);
       if (e1rm > recentBestE1RM) {
         recentBestE1RM = e1rm;
-        recentBestUnit = s.weight_unit || defaultUnit;
+        recentBestUnit = (s.weight_value != null ? s.weight_unit : s.bodyweight_unit) || defaultUnit;
       }
     }
     const olderBestE1RM = Math.max(
-      ...olderSets.map((s) => estimateOneRepMax(s.weight_value ?? 0, s.reps ?? 0)),
+      ...olderSets.map((s) => estimateOneRepMax(s.weight_value ?? s.bodyweight_at_time ?? 0, s.reps ?? 0)),
     );
 
     if (olderBestE1RM <= 0) continue;
