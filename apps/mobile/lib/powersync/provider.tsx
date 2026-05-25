@@ -22,6 +22,7 @@ import { useAuth } from '@clerk/clerk-expo';
 import { Colors } from '@/constants/colors';
 import { powersyncSchema } from './schema';
 import { SupabasePowerSyncConnector } from './connector';
+import { setWorkoutStoreDatabase } from '@/stores/workout-store';
 
 const DB_FILENAME = 'pulse.sqlite';
 
@@ -78,6 +79,8 @@ export function PowerSyncProvider({ children }: PowerSyncProviderProps): React.J
         await db.execute('PRAGMA journal_mode = WAL');
 
         if (!cancelled) {
+          // Inject database into the workout store so confirmSet() can write
+          setWorkoutStoreDatabase(db);
           setIsDbReady(true);
         }
       } catch (error) {

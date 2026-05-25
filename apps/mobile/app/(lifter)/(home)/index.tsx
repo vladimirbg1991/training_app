@@ -1,7 +1,10 @@
+import { useCallback } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
+
+import { useWorkoutStore } from '@/stores/workout-store';
 
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
 const MONTHS = [
@@ -24,9 +27,24 @@ function getDateString(): string {
 const DAY_LABELS = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 export default function HomeScreen(): React.JSX.Element {
+  const router = useRouter();
   const { user } = useUser();
   const displayName = user?.firstName ?? user?.username ?? 'Lifter';
   const initials = (user?.firstName?.[0] ?? '') + (user?.lastName?.[0] ?? '');
+
+  const workoutStatus = useWorkoutStore((s) => s.status);
+  const startWorkout = useWorkoutStore((s) => s.startWorkout);
+
+  const handleStartWorkout = useCallback(async () => {
+    if (workoutStatus === 'active') {
+      router.push('/(lifter)/(workout)/active');
+      return;
+    }
+    const userId = user?.id;
+    if (!userId) return;
+    await startWorkout({ userId });
+    router.push('/(lifter)/(workout)/active');
+  }, [workoutStatus, startWorkout, router, user?.id]);
 
   return (
     <SafeAreaView className="flex-1 bg-page">
@@ -66,17 +84,16 @@ export default function HomeScreen(): React.JSX.Element {
           <Text className="text-ambient text-body-sm mb-4">
             Start an empty workout or pick a routine to follow.
           </Text>
-          <Link href="/(lifter)/(home)/active-workout" asChild>
-            <Pressable
-              className="bg-accent rounded-btn min-h-btn items-center justify-center flex-row gap-2"
-              accessibilityRole="button"
-              accessibilityLabel="Start workout"
-            >
-              <Text className="text-accent-text text-[14px] font-medium">
-                Start workout
-              </Text>
-            </Pressable>
-          </Link>
+          <Pressable
+            onPress={handleStartWorkout}
+            className="bg-accent rounded-btn min-h-btn items-center justify-center flex-row gap-2"
+            accessibilityRole="button"
+            accessibilityLabel={workoutStatus === 'active' ? 'Resume workout' : 'Start workout'}
+          >
+            <Text className="text-accent-text text-[14px] font-medium">
+              {workoutStatus === 'active' ? 'Resume workout' : 'Start workout'}
+            </Text>
+          </Pressable>
         </View>
 
         {/* Secondary actions */}
