@@ -20,7 +20,7 @@ import { useCallback, useMemo, useState, useEffect } from 'react';
 import { View, Text, Pressable, ScrollView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useUser } from '@clerk/clerk-expo';
+import { useUser } from '@clerk/expo';
 import { usePowerSync } from '@powersync/react-native';
 import {
   IconChevronLeft,

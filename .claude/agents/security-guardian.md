@@ -124,7 +124,7 @@ expo, expo-router, expo-haptics, expo-notifications, expo-camera, expo-video,
 expo-video-cache, expo-linking, expo-secure-store, expo-live-activity,
 react, react-native, react-native-reanimated, react-native-gesture-handler,
 react-native-mmkv, nativewind, tailwindcss, zustand, @tanstack/react-query,
-@shopify/flash-list, @clerk/clerk-expo, @supabase/supabase-js,
+@shopify/flash-list, @clerk/expo, @supabase/supabase-js,
 @powersync/react-native, drizzle-orm, drizzle-kit, react-native-purchases,
 zod, date-fns, lucide-react-native, typescript, eslint, prettier, vitest
 ```

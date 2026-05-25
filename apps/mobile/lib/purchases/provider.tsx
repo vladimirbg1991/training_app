@@ -12,7 +12,7 @@ import Purchases, {
   type PurchasesPackage,
   LOG_LEVEL,
 } from 'react-native-purchases';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth } from '@clerk/expo';
 
 // ---------------------------------------------------------------------------
 // Configuration (build-time constants, public SDK keys)

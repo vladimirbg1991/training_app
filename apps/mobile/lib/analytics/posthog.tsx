@@ -10,7 +10,7 @@ import {
   PostHogProvider as PHProvider,
   usePostHog,
 } from 'posthog-react-native';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth } from '@clerk/expo';
 
 // ---------------------------------------------------------------------------
 // Analytics event catalogue

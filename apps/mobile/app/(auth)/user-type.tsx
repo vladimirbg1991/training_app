@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { View, Text, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useUser } from '@clerk/clerk-expo';
+import { useUser } from '@clerk/expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   IconChevronLeft,

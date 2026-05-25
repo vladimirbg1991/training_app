@@ -18,7 +18,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { PowerSyncContext, PowerSyncDatabase } from '@powersync/react-native';
-import { useAuth } from '@clerk/clerk-expo';
+import { useAuth } from '@clerk/expo';
 import { Colors } from '@/constants/colors';
 import { powersyncSchema } from './schema';
 import { SupabasePowerSyncConnector } from './connector';

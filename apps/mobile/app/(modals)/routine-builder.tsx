@@ -33,7 +33,7 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { usePowerSync, useQuery } from '@powersync/react-native';
-import { useUser } from '@clerk/clerk-expo';
+import { useUser } from '@clerk/expo';
 import * as Haptics from 'expo-haptics';
 import {
   IconX,

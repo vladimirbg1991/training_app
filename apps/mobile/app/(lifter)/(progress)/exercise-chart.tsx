@@ -14,7 +14,7 @@ import { useState, useMemo } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useUser } from '@clerk/clerk-expo';
+import { useUser } from '@clerk/expo';
 import { useQuery } from '@powersync/react-native';
 import { IconChevronLeft } from '@tabler/icons-react-native';
 

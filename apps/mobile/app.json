@@ -4,7 +4,7 @@
     "slug": "pulse",
     "version": "0.1.0",
     "scheme": "gymapp",
-    "sdkVersion": "54.0.0",
+    "sdkVersion": "55.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
@@ -29,7 +29,6 @@
     "plugins": [
       "expo-router",
       "@sentry/react-native",
-      "expo-crypto",
       "expo-font",
       "expo-haptics",
       "expo-secure-store",

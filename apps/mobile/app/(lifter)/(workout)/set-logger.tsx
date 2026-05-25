@@ -12,7 +12,7 @@ import { useEffect, useMemo, useCallback } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useUser } from '@clerk/clerk-expo';
+import { useUser } from '@clerk/expo';
 import * as Haptics from 'expo-haptics';
 import { useQuery } from '@powersync/react-native';
 import { IconTrophy, IconFlame, IconEdit, IconSnowflake } from '@tabler/icons-react-native';

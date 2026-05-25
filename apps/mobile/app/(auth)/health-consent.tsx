@@ -17,7 +17,7 @@
 import { useState, useCallback } from 'react';
 import { View, Text, Pressable, ScrollView, ActivityIndicator, Linking } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useUser } from '@clerk/clerk-expo';
+import { useUser } from '@clerk/expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { IconShieldCheck, IconInfoCircle } from '@tabler/icons-react-native';
 import { Colors } from '@/constants/colors';

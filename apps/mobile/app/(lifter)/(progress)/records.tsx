@@ -13,7 +13,7 @@ import { useMemo } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useUser } from '@clerk/clerk-expo';
+import { useUser } from '@clerk/expo';
 import { useQuery } from '@powersync/react-native';
 import { IconChevronLeft, IconTrophy, IconShare } from '@tabler/icons-react-native';
 

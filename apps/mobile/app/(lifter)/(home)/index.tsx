@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useUser } from '@clerk/clerk-expo';
+import { useUser } from '@clerk/expo';
 import { IconChevronRight } from '@tabler/icons-react-native';
 
 import { useWorkoutStore } from '@/stores/workout-store';

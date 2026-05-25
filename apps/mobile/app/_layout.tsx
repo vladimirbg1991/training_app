@@ -4,7 +4,7 @@ import { Slot, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo';
+import { ClerkProvider, useAuth, useUser } from '@clerk/expo';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Sentry from '@sentry/react-native';
 import * as SplashScreen from 'expo-splash-screen';
@@ -27,6 +27,7 @@ Sentry.init({
   tracesSampleRate: __DEV__ ? 1.0 : 0.2,
   profilesSampleRate: __DEV__ ? 1.0 : 0.1,
   sendDefaultPii: false,
+  integrations: [Sentry.reactNativeTracingIntegration()],
 });
 
 const queryClient = new QueryClient({
@@ -144,4 +145,4 @@ function RootLayout(): React.JSX.Element {
   );
 }
 
-export default Sentry.wrap(RootLayout);
+export default RootLayout;

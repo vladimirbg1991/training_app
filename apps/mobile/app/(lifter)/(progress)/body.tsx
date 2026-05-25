@@ -12,7 +12,7 @@ import * as Crypto from 'expo-crypto';
 import { View, Text, Pressable, ScrollView, TextInput, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useUser } from '@clerk/clerk-expo';
+import { useUser } from '@clerk/expo';
 import { usePowerSync, useQuery } from '@powersync/react-native';
 import { IconChevronLeft, IconPlus } from '@tabler/icons-react-native';
 

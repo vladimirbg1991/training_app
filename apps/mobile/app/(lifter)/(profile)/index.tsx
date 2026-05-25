@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { View, Text, Pressable, ScrollView, Alert, Platform, Switch } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useUser, useAuth } from '@clerk/clerk-expo';
+import { useUser, useAuth } from '@clerk/expo';
 import { usePowerSync, useQuery } from '@powersync/react-native';
 import { MMKV } from 'react-native-mmkv';
 import Constants from 'expo-constants';

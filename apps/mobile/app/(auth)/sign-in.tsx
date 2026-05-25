@@ -12,7 +12,7 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import { useRouter, Link } from 'expo-router';
-import { useSignIn, useSSO } from '@clerk/clerk-expo';
+import { useSignIn, useSSO } from '@clerk/expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as WebBrowser from 'expo-web-browser';
 import {

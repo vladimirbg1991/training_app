@@ -25,7 +25,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useUser } from '@clerk/clerk-expo';
+import { useUser } from '@clerk/expo';
 import { usePowerSync, useQuery } from '@powersync/react-native';
 import { IconX, IconPlus } from '@tabler/icons-react-native';
 

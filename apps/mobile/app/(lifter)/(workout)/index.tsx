@@ -2,7 +2,7 @@ import { useCallback } from 'react';
 import { View, Text, Pressable, ScrollView } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useUser } from '@clerk/clerk-expo';
+import { useUser } from '@clerk/expo';
 
 import { useWorkoutStore } from '@/stores/workout-store';
 import { useElapsedTime, formatElapsed } from '@/hooks/use-elapsed-time';
