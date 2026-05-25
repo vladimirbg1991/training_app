@@ -15,6 +15,7 @@ import { loadSnapshot } from '@/stores/mmkv';
 import { PowerSyncProvider } from '@/lib/powersync';
 import { AnalyticsProvider } from '@/lib/analytics';
 import { PurchasesProvider } from '@/lib/purchases';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 
 // Keep splash screen visible while Clerk loads
 SplashScreen.preventAutoHideAsync();
@@ -73,10 +74,14 @@ function AuthGate(): React.JSX.Element {
     if (workoutStatus !== 'idle') return;
     const snapshot = loadSnapshot();
     if (!snapshot) return;
-    restoreFromSnapshot(user.id).catch(() => {
-      // Restore failed — snapshot was stale or corrupted. Stay idle.
-    });
-  }, [isLoaded, isSignedIn, user?.id, workoutStatus, restoreFromSnapshot]);
+    restoreFromSnapshot(user.id)
+      .then(() => {
+        router.replace('/(lifter)/(workout)/active');
+      })
+      .catch(() => {
+        // Restore failed — snapshot was stale or corrupted. Stay idle.
+      });
+  }, [isLoaded, isSignedIn, user?.id, workoutStatus, restoreFromSnapshot, router]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -119,12 +124,14 @@ function RootLayout(): React.JSX.Element {
         <PurchasesProvider>
           <QueryClientProvider client={queryClient}>
             <GestureHandlerRootView style={{ flex: 1 }}>
-              <SafeAreaProvider>
-                <PowerSyncProvider>
-                  <StatusBar style="light" />
-                  <AuthGate />
-                </PowerSyncProvider>
-              </SafeAreaProvider>
+              <ErrorBoundary>
+                <SafeAreaProvider>
+                  <PowerSyncProvider>
+                    <StatusBar style="light" />
+                    <AuthGate />
+                  </PowerSyncProvider>
+                </SafeAreaProvider>
+              </ErrorBoundary>
             </GestureHandlerRootView>
           </QueryClientProvider>
         </PurchasesProvider>

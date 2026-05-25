@@ -93,6 +93,17 @@ export default function BodyMeasurementsScreen() {
   const [formCircValue, setFormCircValue] = useState('');
 
   // --------------------------------------------------------------------------
+  // Query: user preferred unit
+  // --------------------------------------------------------------------------
+  const { data: userRows } = useQuery(
+    userId
+      ? `SELECT default_unit FROM users WHERE id = ?`
+      : `SELECT 1 WHERE 0`,
+    userId ? [userId] : [],
+  ) as { data: Array<{ default_unit: string }> | undefined };
+  const preferredUnit = (userRows?.[0]?.default_unit as 'kg' | 'lb') ?? 'kg';
+
+  // --------------------------------------------------------------------------
   // Queries: body measurements (ordered newest first for display)
   // --------------------------------------------------------------------------
   const { data: measurementRows } = useQuery(
@@ -231,14 +242,14 @@ export default function BodyMeasurementsScreen() {
 
     await db.execute(
       `INSERT INTO body_measurements (id, user_id, weight_value, weight_unit, body_fat_percent, lean_mass_value, lean_mass_unit, recorded_at, sync_source, created_at, updated_at)
-       VALUES (?, ?, ?, 'kg', ?, ?, 'kg', ?, 'app', ?, ?)`,
-      [id, userId, weightVal, bodyFatVal, leanMass, now, now, now],
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'app', ?, ?)`,
+      [id, userId, weightVal, preferredUnit, bodyFatVal, leanMass, preferredUnit, now, now, now],
     );
 
     // Also update the user profile's bodyweight
     await db.execute(
-      `UPDATE users SET current_bodyweight_value = ?, current_bodyweight_unit = 'kg', updated_at = ? WHERE id = ?`,
-      [weightVal, now, userId],
+      `UPDATE users SET current_bodyweight_value = ?, current_bodyweight_unit = ?, updated_at = ? WHERE id = ?`,
+      [weightVal, preferredUnit, now, userId],
     );
 
     setFormWeight('');
@@ -326,7 +337,7 @@ export default function BodyMeasurementsScreen() {
                       className="text-body-sm font-medium"
                       style={{ color: weightDelta90.isPositive ? Colors.coral : Colors.positive }}
                     >
-                      {weightDelta90.text} kg (90d)
+                      {weightDelta90.text} {currentUnit} (90d)
                     </Text>
                   </View>
                 )}
@@ -453,14 +464,14 @@ export default function BodyMeasurementsScreen() {
                   {currentLeanMass !== null ? `${currentLeanMass.toFixed(1)}` : '\u2014'}
                 </Text>
                 <Text className="text-ambient text-label-xs">
-                  {currentLeanMass !== null ? 'kg' : ''}
+                  {currentLeanMass !== null ? (latestMeasurement?.lean_mass_unit ?? preferredUnit) : ''}
                 </Text>
                 {leanMassDelta && (
                   <Text
                     className="text-body-sm mt-1"
                     style={{ color: leanMassDelta.isPositive ? Colors.positive : Colors.coral }}
                   >
-                    {leanMassDelta.text} kg vs prev
+                    {leanMassDelta.text} {latestMeasurement?.lean_mass_unit ?? preferredUnit} vs prev
                   </Text>
                 )}
               </View>
@@ -620,7 +631,7 @@ export default function BodyMeasurementsScreen() {
             </Text>
             <View className="mb-3">
               <Text className="text-label text-label-xs uppercase tracking-widest mb-1">
-                Body Weight (kg)
+                Body Weight ({preferredUnit})
               </Text>
               <TextInput
                 className="bg-stat-tile text-primary text-body-sm rounded-btn-sm px-3 py-2"
@@ -629,7 +640,7 @@ export default function BodyMeasurementsScreen() {
                 keyboardType="decimal-pad"
                 value={formWeight}
                 onChangeText={setFormWeight}
-                accessibilityLabel="Body weight in kilograms"
+                accessibilityLabel={`Body weight in ${preferredUnit === 'kg' ? 'kilograms' : 'pounds'}`}
                 autoFocus
               />
             </View>

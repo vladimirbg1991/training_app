@@ -75,9 +75,22 @@ export function loadSnapshot(): WorkoutSnapshot | null {
   if (!raw) return null;
 
   try {
-    const parsed = JSON.parse(raw) as WorkoutSnapshot;
-    if (parsed.version !== SNAPSHOT_VERSION) return null;
-    return parsed;
+    const parsed = JSON.parse(raw);
+
+    // Shape validation — corrupt snapshots must not crash the app
+    if (
+      !parsed ||
+      typeof parsed !== 'object' ||
+      typeof parsed.sessionId !== 'string' ||
+      typeof parsed.startedAt !== 'number' ||
+      !Array.isArray(parsed.exercises)
+    ) {
+      return null;
+    }
+
+    const snapshot = parsed as WorkoutSnapshot;
+    if (snapshot.version !== SNAPSHOT_VERSION) return null;
+    return snapshot;
   } catch {
     return null;
   }

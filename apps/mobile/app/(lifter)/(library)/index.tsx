@@ -6,6 +6,7 @@ import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
 import { IconSearch, IconPlus } from '@tabler/icons-react-native';
 import { useQuery } from '@powersync/react-native';
 import { Colors } from '@/constants/colors';
+import { BODY_PART_MAP } from '@/constants/body-parts';
 import { MUSCLE_GROUPS, type MuscleGroup } from '@gym-app/domain';
 
 // ---------------------------------------------------------------------------
@@ -25,17 +26,8 @@ interface ExerciseRow {
 }
 
 // ---------------------------------------------------------------------------
-// Body-part mapping: UI muscle groups -> seed data body_part values
+// Body-part mapping: imported from shared constants
 // ---------------------------------------------------------------------------
-
-const BODY_PART_MAP: Record<MuscleGroup, string[]> = {
-  chest: ['chest'],
-  back: ['back'],
-  legs: ['upper legs', 'lower legs'],
-  shoulders: ['shoulders'],
-  arms: ['upper arms', 'lower arms'],
-  core: ['core'],
-};
 
 /** All body_part values that belong to any known muscle group. */
 const ALL_BODY_PARTS = Object.values(BODY_PART_MAP).flat();

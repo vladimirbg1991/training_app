@@ -21,6 +21,7 @@
     },
     "plugins": [
       "expo-router",
+      "@sentry/react-native",
       "expo-font",
       "expo-haptics",
       [

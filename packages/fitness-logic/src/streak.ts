@@ -4,11 +4,11 @@
  * A "streak" counts consecutive TRAINING days, not consecutive calendar days.
  * If the user trains Mon/Wed/Fri, that is a 3-day streak even though there
  * are rest days between. The streak breaks when there are zero training days
- * for a configurable gap threshold (default: 2 calendar days without training).
+ * for a configurable gap threshold (default: 3 calendar days without training).
  */
 
 /** Default maximum gap between training days before the streak breaks. */
-const DEFAULT_MAX_GAP_DAYS = 2;
+const DEFAULT_MAX_GAP_DAYS = 3;
 
 /**
  * Compute the current training streak from a list of workout dates.

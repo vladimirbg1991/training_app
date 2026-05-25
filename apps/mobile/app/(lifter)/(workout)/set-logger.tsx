@@ -111,31 +111,47 @@ export default function SetLoggerScreen() {
   // Initialize draft on mount or exercise change
   // --------------------------------------------------------------------------
 
+  // Prefer the most recent confirmed set from the CURRENT session over history
+  const lastCurrentSessionSet = useMemo(() => {
+    if (exerciseSets.length === 0) return null;
+    return exerciseSets[exerciseSets.length - 1];
+  }, [exerciseSets]);
+
   useEffect(() => {
     if (!currentExercise || status !== 'active') return;
 
     // If there is already a draft for this exercise, keep it
     if (draft?.exerciseId === exerciseId) return;
 
-    // Prefill from the last working set, or fall back to nulls
-    initDraft(
-      lastWorkingSet
-        ? {
-            weightValue: lastWorkingSet.weight_value,
-            weightUnit: (lastWorkingSet.weight_unit as 'kg' | 'lb') ?? 'kg',
-            reps: lastWorkingSet.reps,
-          }
-        : undefined,
-    );
-  }, [exerciseId, status, currentExercise, lastWorkingSet, initDraft, draft?.exerciseId]);
+    // 1. First, try to prefill from the last confirmed set in the current session
+    if (lastCurrentSessionSet) {
+      initDraft({
+        weightValue: lastCurrentSessionSet.weightValue,
+        weightUnit: (lastCurrentSessionSet.weightUnit as 'kg' | 'lb') ?? 'kg',
+        reps: lastCurrentSessionSet.reps,
+      });
+    }
+    // 2. Otherwise, fall back to last working set from historical data
+    else if (lastWorkingSet) {
+      initDraft({
+        weightValue: lastWorkingSet.weight_value,
+        weightUnit: (lastWorkingSet.weight_unit as 'kg' | 'lb') ?? 'kg',
+        reps: lastWorkingSet.reps,
+      });
+    }
+    // 3. No data at all — empty draft
+    else {
+      initDraft(undefined);
+    }
+  }, [exerciseId, status, currentExercise, lastCurrentSessionSet, lastWorkingSet, initDraft, draft?.exerciseId]);
 
   // --------------------------------------------------------------------------
   // PR pace detection
   // --------------------------------------------------------------------------
 
   const prPace = useMemo(() => {
-    if (!draft?.weightValue || !draft?.reps || history.length === 0) return false;
-    return isPRPace(draft.weightValue, draft.reps, history);
+    if (!draft?.weightValue || !draft?.reps) return false;
+    return isPRPace(draft.weightValue, draft.reps, draft.weightUnit ?? 'kg', history);
   }, [draft?.weightValue, draft?.reps, history]);
 
   // --------------------------------------------------------------------------

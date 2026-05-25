@@ -71,7 +71,7 @@ export const syncStreams: Record<string, SyncStream> = {
     data: [
       `SELECT * FROM exercises WHERE is_custom = false`,
       `SELECT * FROM equipment`,
-      `SELECT * FROM gym_equipment_instances`,
+      // gym_equipment_instances: synced per-gym when gym features ship (not catalog)
       `SELECT * FROM exercise_substitutions`,
     ],
     auto_subscribe: true,

@@ -3,7 +3,7 @@ const EQUIPMENT_INCREMENTS: Record<
   string,
   { value: number; unit: 'kg' | 'lb' | 'pin' }
 > = {
-  barbell: { value: 5, unit: 'kg' },
+  barbell: { value: 2.5, unit: 'kg' },
   dumbbell: { value: 2.5, unit: 'kg' },
   cable: { value: 5, unit: 'kg' },
   machine: { value: 1, unit: 'pin' }, // selectorized default

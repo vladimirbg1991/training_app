@@ -33,6 +33,8 @@ const ALLOWED_TABLES = new Set([
   'workout_sets',
   'set_groups',
   'user_exercise_preferences',
+  'body_measurements',
+  'body_circumference',
   // gym_equipment_instances and exercise_substitutions are catalog-only (no client writes)
 ]);
 

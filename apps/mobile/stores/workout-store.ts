@@ -89,6 +89,8 @@ export interface DraftSet {
   isWarmup: boolean;
   isDirty: boolean; // true after any user adjustment
   sourceSetIndex: number;
+  bodyweightAtTime: number | null;
+  bodyweightUnit: 'kg' | 'lb' | null;
 }
 
 export interface DiscardedDraft extends DraftSet {
@@ -227,6 +229,11 @@ function createInitialState(): WorkoutState {
 // Constants
 // ============================================================================
 
+const KG_PER_LB = 0.45359237;
+function toKg(value: number, unit: string): number {
+  return unit === 'lb' ? value * KG_PER_LB : value;
+}
+
 const MAX_UNDO_BUFFER_SIZE = 5;
 const MAX_UNDO_AGE_MS = 5 * 60 * 1000; // 5 minutes
 
@@ -313,7 +320,7 @@ export const workoutStore = createStore<WorkoutState & WorkoutActions>()(
         get().discardDraft();
       }
 
-      // Compute summary stats
+      // Compute summary stats (normalize all volume to kg for internal tracking)
       let totalVolume = 0;
       let totalSets = 0;
       for (const sets of Object.values(state.confirmedSets)) {
@@ -321,7 +328,7 @@ export const workoutStore = createStore<WorkoutState & WorkoutActions>()(
           if (!s.isWarmup) {
             totalSets += 1;
             if (s.weightValue !== null && s.reps !== null) {
-              totalVolume += s.weightValue * s.reps;
+              totalVolume += toKg(s.weightValue, s.weightUnit) * s.reps;
             }
           }
         }
@@ -479,6 +486,8 @@ export const workoutStore = createStore<WorkoutState & WorkoutActions>()(
           isWarmup: false,
           isDirty: false,
           sourceSetIndex: setIndex,
+          bodyweightAtTime: null,
+          bodyweightUnit: null,
         },
       });
     },
@@ -530,8 +539,9 @@ export const workoutStore = createStore<WorkoutState & WorkoutActions>()(
             weight_value, weight_unit, reps, pin_position,
             is_warmup, is_personal_record, performed_at,
             gym_equipment_instance_id, sync_source,
+            bodyweight_at_time, bodyweight_unit,
             created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'app', ?, ?)`,
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'app', ?, ?, ?, ?)`,
           [
             setId,
             sessionId,
@@ -546,6 +556,8 @@ export const workoutStore = createStore<WorkoutState & WorkoutActions>()(
             0, // isPersonalRecord — computed in saveWorkout() or server-side
             now,
             exercise.gymEquipmentInstanceId,
+            draft.bodyweightAtTime,
+            draft.bodyweightUnit,
             now,
             now,
           ],
@@ -652,6 +664,8 @@ export const workoutStore = createStore<WorkoutState & WorkoutActions>()(
           isWarmup: restored.isWarmup,
           isDirty: true,
           sourceSetIndex: restored.sourceSetIndex,
+          bodyweightAtTime: restored.bodyweightAtTime,
+          bodyweightUnit: restored.bodyweightUnit,
         };
 
         return {

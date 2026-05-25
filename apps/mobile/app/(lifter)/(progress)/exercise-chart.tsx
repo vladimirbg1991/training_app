@@ -48,6 +48,7 @@ interface SessionGroup {
   sessionName: string | null;
   sets: SetRow[];
   bestE1rm: number;
+  bestE1rmUnit: string;
   totalVolume: number;
 }
 
@@ -183,6 +184,7 @@ export default function ExerciseChartScreen() {
           sessionName: set.session_name,
           sets: [],
           bestE1rm: 0,
+          bestE1rmUnit: 'kg',
           totalVolume: 0,
         };
         groupMap.set(set.session_id, group);
@@ -191,7 +193,10 @@ export default function ExerciseChartScreen() {
 
       if (!set.is_warmup && set.weight_value && set.reps) {
         const e1rm = estimateOneRepMax(set.weight_value, set.reps);
-        if (e1rm > group.bestE1rm) group.bestE1rm = e1rm;
+        if (e1rm > group.bestE1rm) {
+          group.bestE1rm = e1rm;
+          group.bestE1rmUnit = set.weight_unit || 'kg';
+        }
         group.totalVolume += set.weight_value * set.reps;
       }
     }
@@ -211,23 +216,24 @@ export default function ExerciseChartScreen() {
     const working = allSets.filter((s) => !s.is_warmup && s.weight_value && s.reps);
     if (working.length === 0) return null;
 
-    let bestE1rm = 0, bestE1rmDate = '';
-    let maxWeight = 0, maxWeightDate = '';
+    let bestE1rm = 0, bestE1rmDate = '', bestE1rmUnit = 'kg';
+    let maxWeight = 0, maxWeightDate = '', maxWeightUnit = 'kg';
     let maxReps = 0, maxRepsDate = '';
 
     for (const set of working) {
       const w = set.weight_value!;
       const r = set.reps!;
       const e1rm = estimateOneRepMax(w, r);
+      const unit = set.weight_unit || 'kg';
 
-      if (e1rm > bestE1rm) { bestE1rm = e1rm; bestE1rmDate = set.performed_at; }
-      if (w > maxWeight) { maxWeight = w; maxWeightDate = set.performed_at; }
+      if (e1rm > bestE1rm) { bestE1rm = e1rm; bestE1rmDate = set.performed_at; bestE1rmUnit = unit; }
+      if (w > maxWeight) { maxWeight = w; maxWeightDate = set.performed_at; maxWeightUnit = unit; }
       if (r > maxReps) { maxReps = r; maxRepsDate = set.performed_at; }
     }
 
     return {
-      bestE1rm: roundToHalf(bestE1rm), bestE1rmDate,
-      maxWeight, maxWeightDate,
+      bestE1rm: roundToHalf(bestE1rm), bestE1rmDate, bestE1rmUnit,
+      maxWeight, maxWeightDate, maxWeightUnit,
       maxReps, maxRepsDate,
     };
   }, [allSets]);
@@ -276,7 +282,9 @@ export default function ExerciseChartScreen() {
     ? Math.round(((latestValue - firstValue) / firstValue) * 100)
     : null;
 
-  const metricUnit = activeMetric === 'rpe' ? '' : activeMetric === 'volume' ? ' kg' : ' kg';
+  // Derive display unit from actual data (allTimeBests or latest set)
+  const dataUnit = allTimeBests?.bestE1rmUnit ?? (allSets.length > 0 ? (allSets[allSets.length - 1]!.weight_unit || 'kg') : 'kg');
+  const metricUnit = activeMetric === 'rpe' ? '' : ` ${dataUnit}`;
 
   const trend = useMemo(() => {
     if (activeMetric === 'rpe') return null; // RPE trend is not useful as an "insight"
@@ -289,12 +297,12 @@ export default function ExerciseChartScreen() {
     const direction = trend.slope > 0 ? 'adding' : 'losing';
 
     switch (activeMetric) {
-      case 'e1rm': return `You're ${direction} ~${perSession} kg per session on est. 1RM`;
-      case 'top_set': return `You're ${direction} ~${perSession} kg per session on top set`;
-      case 'volume': return `Volume is ${trend.slope > 0 ? 'increasing' : 'decreasing'} by ~${formatVolume(perSession)} per session`;
+      case 'e1rm': return `You're ${direction} ~${perSession} ${dataUnit} per session on est. 1RM`;
+      case 'top_set': return `You're ${direction} ~${perSession} ${dataUnit} per session on top set`;
+      case 'volume': return `Volume is ${trend.slope > 0 ? 'increasing' : 'decreasing'} by ~${formatVolume(perSession, dataUnit)} per session`;
       default: return null;
     }
-  }, [trend, activeMetric, chartData.length]);
+  }, [trend, activeMetric, chartData.length, dataUnit]);
 
   // --------------------------------------------------------------------------
   // Empty state guard
@@ -374,7 +382,7 @@ export default function ExerciseChartScreen() {
                     Est. 1RM
                   </Text>
                   <Text className="text-primary text-subtitle font-medium">
-                    {allTimeBests ? `${allTimeBests.bestE1rm} kg` : '\u2014'}
+                    {allTimeBests ? `${allTimeBests.bestE1rm} ${allTimeBests.bestE1rmUnit}` : '\u2014'}
                   </Text>
                   {allTimeBests && (
                     <Text className="text-ambient text-[10px] mt-0.5">
@@ -388,7 +396,7 @@ export default function ExerciseChartScreen() {
                     Max Weight
                   </Text>
                   <Text className="text-primary text-subtitle font-medium">
-                    {allTimeBests ? `${allTimeBests.maxWeight} kg` : '\u2014'}
+                    {allTimeBests ? `${allTimeBests.maxWeight} ${allTimeBests.maxWeightUnit}` : '\u2014'}
                   </Text>
                   {allTimeBests && (
                     <Text className="text-ambient text-[10px] mt-0.5">
@@ -503,8 +511,8 @@ export default function ExerciseChartScreen() {
                             {activeMetric === 'rpe'
                               ? point.value.toFixed(1)
                               : activeMetric === 'volume'
-                                ? formatVolume(point.value)
-                                : `${roundToHalf(point.value)} kg`}
+                                ? formatVolume(point.value, dataUnit)
+                                : `${roundToHalf(point.value)} ${dataUnit}`}
                           </Text>
                         </View>
                       );
@@ -607,10 +615,10 @@ export default function ExerciseChartScreen() {
                   {/* Session summary line */}
                   <View className="flex-row items-center mt-2 gap-3">
                     <Text className="text-label text-[10px]">
-                      E1RM: {roundToHalf(group.bestE1rm)} kg
+                      E1RM: {roundToHalf(group.bestE1rm)} {group.bestE1rmUnit}
                     </Text>
                     <Text className="text-label text-[10px]">
-                      Vol: {formatVolume(group.totalVolume)}
+                      Vol: {formatVolume(group.totalVolume, group.bestE1rmUnit)}
                     </Text>
                   </View>
                 </View>

@@ -108,7 +108,7 @@ export function SteppedInput({
           onLongPress={() => startLongPress('dec')}
           onPressOut={stopLongPress}
           delayLongPress={400}
-          className="w-[44px] h-[44px] bg-hero rounded-btn-sm items-center justify-center"
+          className="w-[64px] h-[64px] bg-hero rounded-btn-sm items-center justify-center"
           accessibilityRole="button"
           accessibilityLabel={`Decrease ${label} by ${step} ${unit}`}
         >
@@ -117,7 +117,7 @@ export function SteppedInput({
 
         {/* Value display */}
         <View className="min-w-[72px] items-center">
-          <Text className="text-primary text-[28px] font-medium leading-tight">
+          <Text className="text-primary text-[32px] font-medium leading-tight">
             {displayValue}
           </Text>
         </View>
@@ -128,7 +128,7 @@ export function SteppedInput({
           onLongPress={() => startLongPress('inc')}
           onPressOut={stopLongPress}
           delayLongPress={400}
-          className="w-[44px] h-[44px] bg-hero rounded-btn-sm items-center justify-center"
+          className="w-[64px] h-[64px] bg-hero rounded-btn-sm items-center justify-center"
           accessibilityRole="button"
           accessibilityLabel={`Increase ${label} by ${step} ${unit}`}
         >

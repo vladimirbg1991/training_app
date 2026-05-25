@@ -1,7 +1,14 @@
 import { estimateOneRepMax } from './one-rep-max.js';
 
+const KG_PER_LB = 0.45359237;
+
+function toKg(value: number, unit: string | null): number {
+  return unit === 'lb' ? value * KG_PER_LB : value;
+}
+
 interface HistoricalSet {
   weight_value: number | null;
+  weight_unit: string | null;
   reps: number | null;
   pin_position: number | null;
   is_warmup: number; // SQLite boolean
@@ -21,6 +28,7 @@ export interface PRResult {
 export function detectPRs(
   newSet: {
     weightValue: number | null;
+    weightUnit: string;
     reps: number | null;
     pinPosition: number | null;
     isWarmup: boolean;
@@ -33,26 +41,40 @@ export function detectPRs(
   const workingSets = history.filter(
     (h) => h.is_warmup === 0 && h.weight_value && h.reps,
   );
-  if (workingSets.length === 0) return []; // First time doing this exercise, no PRs to detect
 
+  // First-ever working set is always a PR
+  if (workingSets.length === 0) {
+    const prs: PRResult[] = [];
+    if (newSet.weightValue > 0) {
+      prs.push({
+        type: 'weight',
+        value: newSet.weightValue,
+        previousValue: null,
+        description: `First ${exerciseName} PR: ${newSet.weightValue} ${newSet.weightUnit}`,
+      });
+    }
+    return prs;
+  }
+
+  const newWeightKg = toKg(newSet.weightValue, newSet.weightUnit);
   const prs: PRResult[] = [];
 
-  // Weight PR: heaviest weight lifted at any rep count
-  const maxHistoricalWeight = Math.max(
-    ...workingSets.map((h) => h.weight_value!),
+  // Weight PR: heaviest weight lifted at any rep count (normalized to kg)
+  const maxHistoricalWeightKg = Math.max(
+    ...workingSets.map((h) => toKg(h.weight_value!, h.weight_unit)),
   );
-  if (newSet.weightValue > maxHistoricalWeight) {
+  if (newWeightKg > maxHistoricalWeightKg) {
     prs.push({
       type: 'weight',
       value: newSet.weightValue,
-      previousValue: maxHistoricalWeight,
-      description: `New weight PR: ${newSet.weightValue} kg on ${exerciseName}`,
+      previousValue: maxHistoricalWeightKg,
+      description: `New weight PR: ${newSet.weightValue} ${newSet.weightUnit} on ${exerciseName}`,
     });
   }
 
-  // Reps PR: most reps at the same or higher weight
+  // Reps PR: most reps at the same or higher weight (normalized to kg)
   const setsAtSameOrHigherWeight = workingSets.filter(
-    (h) => h.weight_value! >= newSet.weightValue!,
+    (h) => toKg(h.weight_value!, h.weight_unit) >= newWeightKg,
   );
   if (setsAtSameOrHigherWeight.length > 0) {
     const maxRepsAtWeight = Math.max(
@@ -63,15 +85,17 @@ export function detectPRs(
         type: 'reps',
         value: newSet.reps,
         previousValue: maxRepsAtWeight,
-        description: `New reps PR: ${newSet.weightValue} × ${newSet.reps} on ${exerciseName}`,
+        description: `New reps PR: ${newSet.weightValue} ${newSet.weightUnit} × ${newSet.reps} on ${exerciseName}`,
       });
     }
   }
 
-  // Estimated 1RM PR
-  const newE1RM = estimateOneRepMax(newSet.weightValue, newSet.reps);
+  // Estimated 1RM PR (always compare in kg for consistency)
+  const newE1RM = estimateOneRepMax(newWeightKg, newSet.reps);
   const maxHistoricalE1RM = Math.max(
-    ...workingSets.map((h) => estimateOneRepMax(h.weight_value!, h.reps!)),
+    ...workingSets.map((h) =>
+      estimateOneRepMax(toKg(h.weight_value!, h.weight_unit), h.reps!),
+    ),
   );
   if (newE1RM > maxHistoricalE1RM) {
     prs.push({
@@ -92,17 +116,20 @@ export function detectPRs(
 export function isPRPace(
   draftWeight: number | null,
   draftReps: number | null,
+  draftWeightUnit: string,
   history: HistoricalSet[],
 ): boolean {
   if (!draftWeight || !draftReps) return false;
   const workingSets = history.filter(
     (h) => h.is_warmup === 0 && h.weight_value && h.reps,
   );
-  if (workingSets.length === 0) return false;
+  if (workingSets.length === 0) return true; // First-ever set is always PR pace
 
-  const newE1RM = estimateOneRepMax(draftWeight, draftReps);
+  const newE1RM = estimateOneRepMax(toKg(draftWeight, draftWeightUnit), draftReps);
   const maxE1RM = Math.max(
-    ...workingSets.map((h) => estimateOneRepMax(h.weight_value!, h.reps!)),
+    ...workingSets.map((h) =>
+      estimateOneRepMax(toKg(h.weight_value!, h.weight_unit), h.reps!),
+    ),
   );
   return newE1RM > maxE1RM;
 }

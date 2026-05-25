@@ -28,7 +28,7 @@ export function averageRPE(sets: Array<{ rpe: number | null }>): number | null {
 }
 
 /** Format volume for display: "8,420 kg" with thousands separator. */
-export function formatVolume(volume: number, unit: string = 'kg'): string {
+export function formatVolume(volume: number, unit: string): string {
   return `${volume.toLocaleString('en-US', { maximumFractionDigits: 0 })} ${unit}`;
 }
 

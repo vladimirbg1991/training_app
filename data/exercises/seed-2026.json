@@ -90,8 +90,8 @@
       "name": "Barbell Deadlift",
       "instructions": "Stand with your mid-foot under the bar, feet hip-width apart. Hinge at the hips and grip the bar just outside your knees with either a double overhand or mixed grip.\nDrive through your feet, extend your hips and knees simultaneously, and pull the bar up your shins and thighs until you are standing tall with your shoulders back.\nReverse the movement by pushing your hips back first, then bending your knees once the bar passes them, and return the bar to the floor under control.",
       "body_part": "back",
-      "target_muscle": "glutes",
-      "secondary_muscles": ["hamstrings", "lats", "trapezius"],
+      "target_muscle": "spinal erectors",
+      "secondary_muscles": ["glutes", "hamstrings", "lats", "trapezius"],
       "equipment_name": "Barbell",
       "is_custom": false,
       "external_id": "0008"
@@ -159,9 +159,9 @@
     {
       "name": "Face Pull",
       "instructions": "Attach a rope handle to a cable set at upper-chest height. Grab the rope with both hands using an overhand grip and step back to create tension.\nPull the rope toward your face by flaring your elbows out and back, separating the ends of the rope as they pass your ears. Squeeze your rear delts and external rotators at the end.\nReturn the rope forward under control without letting the weight stack pull you off balance.",
-      "body_part": "back",
+      "body_part": "shoulders",
       "target_muscle": "deltoids",
-      "secondary_muscles": ["trapezius"],
+      "secondary_muscles": ["trapezius", "infraspinatus"],
       "equipment_name": "Cable Machine",
       "is_custom": false,
       "external_id": "0015"
@@ -432,7 +432,7 @@
       "body_part": "core",
       "target_muscle": "abdominals",
       "secondary_muscles": ["lats"],
-      "equipment_name": "Bodyweight",
+      "equipment_name": "Other",
       "is_custom": false,
       "external_id": "0042"
     },

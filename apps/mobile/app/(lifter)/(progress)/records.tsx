@@ -148,7 +148,7 @@ export default function PersonalRecordsScreen() {
   const { data: allWorkingSets } = useQuery(
     userId
       ? `SELECT ws.exercise_id, e.name AS exercise_name,
-                ws.weight_value, ws.reps, ws.performed_at
+                ws.weight_value, ws.weight_unit, ws.reps, ws.performed_at
          FROM workout_sets ws
          JOIN exercises e ON ws.exercise_id = e.id
          WHERE ws.user_id = ? AND ws.is_warmup = 0
@@ -157,7 +157,7 @@ export default function PersonalRecordsScreen() {
          ORDER BY ws.performed_at DESC`
       : `SELECT 1 WHERE 0`,
     userId ? [userId] : [],
-  ) as { data: Array<{ exercise_id: string; exercise_name: string; weight_value: number; reps: number; performed_at: string }> | undefined };
+  ) as { data: Array<{ exercise_id: string; exercise_name: string; weight_value: number; weight_unit: string; reps: number; performed_at: string }> | undefined };
 
   // --------------------------------------------------------------------------
   // Derived: per-exercise estimated 1RM records
@@ -171,6 +171,7 @@ export default function PersonalRecordsScreen() {
       bestWeight: number;
       bestReps: number;
       bestDate: string;
+      bestUnit: string;
     }>();
 
     for (const s of sets) {
@@ -184,6 +185,7 @@ export default function PersonalRecordsScreen() {
           bestWeight: s.weight_value,
           bestReps: s.reps,
           bestDate: s.performed_at,
+          bestUnit: s.weight_unit || 'kg',
         });
       }
     }
@@ -214,7 +216,7 @@ export default function PersonalRecordsScreen() {
   // Derived: Big 3 lifetime
   // --------------------------------------------------------------------------
   const big3 = useMemo(() => {
-    const result: Record<'squat' | 'bench' | 'deadlift', { e1rm: number; date: string } | null> = {
+    const result: Record<'squat' | 'bench' | 'deadlift', { e1rm: number; date: string; unit: string } | null> = {
       squat: null,
       bench: null,
       deadlift: null,
@@ -225,13 +227,15 @@ export default function PersonalRecordsScreen() {
       if (lift) {
         const current = result[lift];
         if (!current || record.bestE1rm > current.e1rm) {
-          result[lift] = { e1rm: record.bestE1rm, date: record.bestDate };
+          result[lift] = { e1rm: record.bestE1rm, date: record.bestDate, unit: record.bestUnit };
         }
       }
     }
 
     const total = (result.squat?.e1rm ?? 0) + (result.bench?.e1rm ?? 0) + (result.deadlift?.e1rm ?? 0);
-    return { ...result, total };
+    // Use the unit from any available Big 3 lift (they should all match for a given user)
+    const totalUnit = result.squat?.unit ?? result.bench?.unit ?? result.deadlift?.unit ?? 'kg';
+    return { ...result, total, totalUnit };
   }, [exerciseRecords]);
 
   const hasBig3 = big3.squat || big3.bench || big3.deadlift;
@@ -242,13 +246,15 @@ export default function PersonalRecordsScreen() {
   const recentPRs = prFlaggedSets.length > 0
     ? prFlaggedSets.map((pr) => {
         const e1rm = estimateOneRepMax(pr.weight_value, pr.reps);
+        const unit = pr.weight_unit || 'kg';
         return {
           id: pr.id,
           exerciseName: pr.exercise_name,
           prType: 'Est. 1RM' as const,
           date: pr.performed_at,
-          value: `${roundToHalf(e1rm)} kg`,
+          value: `${roundToHalf(e1rm)} ${unit}`,
           weight: pr.weight_value,
+          weightUnit: unit,
           reps: pr.reps,
         };
       })
@@ -257,8 +263,9 @@ export default function PersonalRecordsScreen() {
         exerciseName: r.exerciseName,
         prType: 'Est. 1RM' as const,
         date: r.bestDate,
-        value: `${roundToHalf(r.bestE1rm)} kg`,
+        value: `${roundToHalf(r.bestE1rm)} ${r.bestUnit}`,
         weight: r.bestWeight,
+        weightUnit: r.bestUnit,
         reps: r.bestReps,
       }));
 
@@ -410,7 +417,7 @@ export default function PersonalRecordsScreen() {
                     {pr.exerciseName}
                   </Text>
                   <Text className="text-ambient text-[10px]">
-                    {pr.prType} {'\u00B7'} {formatDate(pr.date)} {'\u00B7'} {pr.weight}kg {'\u00D7'} {pr.reps}
+                    {pr.prType} {'\u00B7'} {formatDate(pr.date)} {'\u00B7'} {pr.weight}{pr.weightUnit} {'\u00D7'} {pr.reps}
                   </Text>
                 </View>
                 {/* Value badge */}
@@ -433,7 +440,7 @@ export default function PersonalRecordsScreen() {
                   <View className="flex-row items-center justify-between py-2">
                     <Text className="text-primary text-body-sm">Squat</Text>
                     <Text className="text-primary text-body-sm font-medium">
-                      {big3.squat ? `${roundToHalf(big3.squat.e1rm)} kg` : '\u2014'}
+                      {big3.squat ? `${roundToHalf(big3.squat.e1rm)} ${big3.squat.unit}` : '\u2014'}
                     </Text>
                   </View>
                   <View className="border-t-[0.5px] border-border-subtle" />
@@ -441,7 +448,7 @@ export default function PersonalRecordsScreen() {
                   <View className="flex-row items-center justify-between py-2">
                     <Text className="text-primary text-body-sm">Bench Press</Text>
                     <Text className="text-primary text-body-sm font-medium">
-                      {big3.bench ? `${roundToHalf(big3.bench.e1rm)} kg` : '\u2014'}
+                      {big3.bench ? `${roundToHalf(big3.bench.e1rm)} ${big3.bench.unit}` : '\u2014'}
                     </Text>
                   </View>
                   <View className="border-t-[0.5px] border-border-subtle" />
@@ -449,7 +456,7 @@ export default function PersonalRecordsScreen() {
                   <View className="flex-row items-center justify-between py-2">
                     <Text className="text-primary text-body-sm">Deadlift</Text>
                     <Text className="text-primary text-body-sm font-medium">
-                      {big3.deadlift ? `${roundToHalf(big3.deadlift.e1rm)} kg` : '\u2014'}
+                      {big3.deadlift ? `${roundToHalf(big3.deadlift.e1rm)} ${big3.deadlift.unit}` : '\u2014'}
                     </Text>
                   </View>
                   <View className="border-t-[0.5px] border-border-subtle" />
@@ -460,7 +467,7 @@ export default function PersonalRecordsScreen() {
                       className="text-subtitle font-medium"
                       style={{ color: Colors.amber }}
                     >
-                      {big3.total > 0 ? `${roundToHalf(big3.total)} kg` : '\u2014'}
+                      {big3.total > 0 ? `${roundToHalf(big3.total)} ${big3.totalUnit}` : '\u2014'}
                     </Text>
                   </View>
                 </View>

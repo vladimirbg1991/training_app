@@ -48,6 +48,7 @@ interface ExerciseTrendRow {
 interface ExerciseSetRow {
   exercise_id: string;
   weight_value: number | null;
+  weight_unit: string;
   reps: number | null;
   performed_at: string;
 }
@@ -74,7 +75,7 @@ function daysAgoISO(days: number): string {
 function useTotalVolume(userId: string, since: string) {
   return useQuery<VolumeRow>(
     userId
-      ? `SELECT SUM(weight_value * reps) AS total_volume
+      ? `SELECT SUM(CASE WHEN weight_unit = 'lb' THEN weight_value * 0.45359237 ELSE weight_value END * reps) AS total_volume
          FROM workout_sets
          WHERE user_id = ? AND is_warmup = 0 AND performed_at > ?`
       : `SELECT 1 WHERE 0`,
@@ -96,7 +97,7 @@ function useSessionCount(userId: string, since: string) {
 function usePreviousPeriodVolume(userId: string, periodStart: string, periodEnd: string) {
   return useQuery<VolumeRow>(
     userId
-      ? `SELECT SUM(weight_value * reps) AS total_volume
+      ? `SELECT SUM(CASE WHEN weight_unit = 'lb' THEN weight_value * 0.45359237 ELSE weight_value END * reps) AS total_volume
          FROM workout_sets
          WHERE user_id = ? AND is_warmup = 0 AND performed_at > ? AND performed_at <= ?`
       : `SELECT 1 WHERE 0`,
@@ -110,7 +111,7 @@ function useWeeklyVolume(userId: string, weeks: number) {
     userId
       ? `SELECT
            strftime('%Y-W%W', performed_at) AS week_label,
-           SUM(weight_value * reps) AS weekly_volume
+           SUM(CASE WHEN weight_unit = 'lb' THEN weight_value * 0.45359237 ELSE weight_value END * reps) AS weekly_volume
          FROM workout_sets
          WHERE user_id = ? AND is_warmup = 0 AND performed_at > ?
          GROUP BY week_label
@@ -139,7 +140,7 @@ function useRecentExercises(userId: string) {
 function useExerciseSets(userId: string, since: string) {
   return useQuery<ExerciseSetRow>(
     userId
-      ? `SELECT exercise_id, weight_value, reps, performed_at
+      ? `SELECT exercise_id, weight_value, weight_unit, reps, performed_at
          FROM workout_sets
          WHERE user_id = ? AND is_warmup = 0 AND performed_at > ?
            AND weight_value IS NOT NULL AND reps IS NOT NULL
@@ -174,6 +175,7 @@ interface ExerciseTrendResult {
   name: string;
   bodyPart: string | null;
   currentE1RM: number;
+  currentE1RMUnit: string;
   previousE1RM: number;
   deltaPercent: number;
 }
@@ -202,9 +204,15 @@ function computeExerciseTrends(
 
     if (recentSets.length === 0 || olderSets.length === 0) continue;
 
-    const recentBestE1RM = Math.max(
-      ...recentSets.map((s) => estimateOneRepMax(s.weight_value ?? 0, s.reps ?? 0)),
-    );
+    let recentBestE1RM = 0;
+    let recentBestUnit = 'kg';
+    for (const s of recentSets) {
+      const e1rm = estimateOneRepMax(s.weight_value ?? 0, s.reps ?? 0);
+      if (e1rm > recentBestE1RM) {
+        recentBestE1RM = e1rm;
+        recentBestUnit = s.weight_unit || 'kg';
+      }
+    }
     const olderBestE1RM = Math.max(
       ...olderSets.map((s) => estimateOneRepMax(s.weight_value ?? 0, s.reps ?? 0)),
     );
@@ -218,6 +226,7 @@ function computeExerciseTrends(
       name: ex.exercise_name,
       bodyPart: ex.body_part,
       currentE1RM: recentBestE1RM,
+      currentE1RMUnit: recentBestUnit,
       previousE1RM: olderBestE1RM,
       deltaPercent,
     };
@@ -314,7 +323,7 @@ function TrendExerciseRow({
           {exercise.name}
         </Text>
         <Text className="text-label text-[11px]">
-          {exercise.bodyPart ?? 'Unknown'} {'\u00B7'} Est. 1RM {roundToHalf(exercise.currentE1RM)} kg
+          {exercise.bodyPart ?? 'Unknown'} {'\u00B7'} Est. 1RM {roundToHalf(exercise.currentE1RM)} {exercise.currentE1RMUnit}
         </Text>
       </View>
       <Text
@@ -482,7 +491,7 @@ export default function ProgressDashboardScreen() {
               VOLUME {'\u00B7'} 30D
             </Text>
             <Text className="text-primary text-hero-num font-medium" style={{ letterSpacing: -0.5 }}>
-              {hasData ? formatVolume(currentVolume) : '\u2014'}
+              {hasData ? formatVolume(currentVolume, 'kg') : '\u2014'}
             </Text>
             {volumeDelta !== null && (
               <Text

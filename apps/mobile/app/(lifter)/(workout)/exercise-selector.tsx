@@ -35,6 +35,7 @@ import { useWorkoutStore } from '@/stores';
 import type { WorkoutExercise } from '@/stores';
 import { resolveIncrement } from '@/lib/workout';
 import { Colors } from '@/constants/colors';
+import { BODY_PART_MAP } from '@/constants/body-parts';
 import { MUSCLE_GROUPS, type MuscleGroup } from '@gym-app/domain';
 
 // ============================================================================
@@ -62,19 +63,6 @@ interface RecentExerciseRow {
   exercise_id: string;
   last_used: string;
 }
-
-// ============================================================================
-// Body-part mapping (same as library screen)
-// ============================================================================
-
-const BODY_PART_MAP: Record<MuscleGroup, string[]> = {
-  chest: ['chest'],
-  back: ['back'],
-  legs: ['upper legs', 'lower legs'],
-  shoulders: ['shoulders'],
-  arms: ['upper arms', 'lower arms'],
-  core: ['core'],
-};
 
 // ============================================================================
 // Filter chip definitions
@@ -296,7 +284,7 @@ export default function ExerciseSelectorScreen() {
             {/* Add button */}
             {isInWorkout ? (
               <View
-                className="w-[36px] h-[36px] rounded-btn-sm bg-stat-tile items-center justify-center opacity-50"
+                className="w-[44px] h-[44px] rounded-btn-sm bg-stat-tile items-center justify-center opacity-50"
                 accessibilityLabel={`${item.name} already added`}
               >
                 <Text className="text-ambient text-body-sm">{'\u2713'}</Text>
@@ -304,7 +292,7 @@ export default function ExerciseSelectorScreen() {
             ) : (
               <Pressable
                 onPress={() => handleAddExercise(item)}
-                className={`w-[36px] h-[36px] rounded-btn-sm items-center justify-center ${
+                className={`w-[44px] h-[44px] rounded-btn-sm items-center justify-center ${
                   isFirstRow ? 'bg-accent' : 'bg-stat-tile'
                 }`}
                 accessibilityRole="button"

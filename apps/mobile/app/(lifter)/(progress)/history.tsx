@@ -315,7 +315,7 @@ function SessionCard({
   const durationLabel = session.duration_seconds
     ? formatDuration(session.duration_seconds)
     : null;
-  const volumeLabel = stats ? formatVolume(stats.volume) : '\u2014';
+  const volumeLabel = stats ? formatVolume(stats.volume, 'kg') : '\u2014';
   const setCountLabel = stats ? String(stats.setCount) : '0';
   const rpeLabel = stats?.avgRPE !== null && stats?.avgRPE !== undefined
     ? stats.avgRPE.toFixed(1)

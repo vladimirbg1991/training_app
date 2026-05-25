@@ -2,6 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useUser } from '@clerk/clerk-expo';
 
 import { useWorkoutStore } from '@/stores/workout-store';
 import { useElapsedTime, formatElapsed } from '@/hooks/use-elapsed-time';
@@ -30,6 +31,7 @@ const UNDO_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes — matches store ring buffer
 
 export default function ActiveWorkoutScreen() {
   const router = useRouter();
+  const { user } = useUser();
 
   // ---------------------------------------------------------------------------
   // Fine-grained store selectors (one per value — Zustand re-renders only

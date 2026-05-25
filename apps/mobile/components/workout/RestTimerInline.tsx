@@ -32,7 +32,7 @@ export function RestTimerInline({
       {/* Skip button */}
       <Pressable
         onPress={onSkip}
-        className="h-8 px-3 bg-stat-tile rounded-btn-sm items-center justify-center"
+        className="h-11 px-4 bg-stat-tile rounded-btn-sm items-center justify-center"
         accessibilityRole="button"
         accessibilityLabel="Skip rest timer"
       >

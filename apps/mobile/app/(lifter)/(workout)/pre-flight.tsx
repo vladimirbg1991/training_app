@@ -33,7 +33,7 @@ import {
 import { useRoutine } from '@/lib/powersync';
 import { useWorkoutStore } from '@/stores/workout-store';
 import type { WorkoutExercise } from '@/stores/workout-store';
-import { resolveIncrement } from '@/lib/workout';
+import { resolveIncrement, parseExerciseConfig, estimateMinutes } from '@/lib/workout';
 import { Colors } from '@/constants/colors';
 import type { RoutineExerciseConfig } from '@gym-app/domain';
 
@@ -68,41 +68,6 @@ interface ResolvedExercise {
   name: string;
   equipmentName: string | null;
   equipmentCategory: string | null;
-}
-
-// ============================================================================
-// Helpers
-// ============================================================================
-
-/** Average rest per set in seconds (used for estimated time). */
-const AVG_REST_SECONDS = 90;
-/** Average working time per set in seconds. */
-const AVG_SET_SECONDS = 40;
-
-/**
- * Parse the exercise_config JSON from a routine row.
- * Returns an empty array on any parse failure.
- */
-function parseExerciseConfig(raw: string | null): RoutineExerciseConfig[] {
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as RoutineExerciseConfig[]) : [];
-  } catch {
-    return [];
-  }
-}
-
-/**
- * Estimate workout duration in minutes from exercise configs.
- */
-function estimateMinutes(configs: RoutineExerciseConfig[]): number {
-  let totalSeconds = 0;
-  for (const config of configs) {
-    const restPerSet = config.restSeconds ?? AVG_REST_SECONDS;
-    totalSeconds += config.targetSets * (AVG_SET_SECONDS + restPerSet);
-  }
-  return Math.max(1, Math.round(totalSeconds / 60));
 }
 
 // ============================================================================
