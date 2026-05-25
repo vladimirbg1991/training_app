@@ -14,7 +14,7 @@
   "_versionNote": "Targeting Expo SDK 55 (RN 0.81). Versions aligned by `npx expo install --fix`.",
   "dependencies": {
     "@journeyapps/wa-sqlite": "1.1.0",
-    "@clerk/expo": "4.1.2",
+    "@clerk/expo": "3.2.16",
     "@expo/metro-runtime": "~6.1.2",
     "@sentry/react-native": "~7.2.0",
     "@powersync/react-native": "1.15.0",
