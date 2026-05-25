@@ -128,6 +128,15 @@ export default function ExerciseChartScreen() {
   const { user } = useUser();
   const userId = user?.id ?? '';
 
+  // User preferred unit
+  const { data: userRows } = useQuery(
+    userId
+      ? `SELECT default_unit FROM users WHERE id = ?`
+      : `SELECT 1 WHERE 0`,
+    userId ? [userId] : [],
+  ) as { data: Array<{ default_unit: string }> | undefined };
+  const preferredUnit = (userRows?.[0]?.default_unit as 'kg' | 'lb') ?? 'kg';
+
   const [activeMetric, setActiveMetric] = useState<MetricTab>('e1rm');
   const [activeRange, setActiveRange] = useState<RangePill>('All');
 
@@ -184,7 +193,7 @@ export default function ExerciseChartScreen() {
           sessionName: set.session_name,
           sets: [],
           bestE1rm: 0,
-          bestE1rmUnit: 'kg',
+          bestE1rmUnit: preferredUnit,
           totalVolume: 0,
         };
         groupMap.set(set.session_id, group);
@@ -195,7 +204,7 @@ export default function ExerciseChartScreen() {
         const e1rm = estimateOneRepMax(set.weight_value, set.reps);
         if (e1rm > group.bestE1rm) {
           group.bestE1rm = e1rm;
-          group.bestE1rmUnit = set.weight_unit || 'kg';
+          group.bestE1rmUnit = set.weight_unit || preferredUnit;
         }
         group.totalVolume += set.weight_value * set.reps;
       }
@@ -207,7 +216,7 @@ export default function ExerciseChartScreen() {
       ),
       filteredSets: filtered,
     };
-  }, [allSets, activeRange]);
+  }, [allSets, activeRange, preferredUnit]);
 
   // --------------------------------------------------------------------------
   // Compute all-time bests (across ALL data, not range-filtered)
@@ -216,15 +225,15 @@ export default function ExerciseChartScreen() {
     const working = allSets.filter((s) => !s.is_warmup && s.weight_value && s.reps);
     if (working.length === 0) return null;
 
-    let bestE1rm = 0, bestE1rmDate = '', bestE1rmUnit = 'kg';
-    let maxWeight = 0, maxWeightDate = '', maxWeightUnit = 'kg';
+    let bestE1rm = 0, bestE1rmDate = '', bestE1rmUnit = preferredUnit as string;
+    let maxWeight = 0, maxWeightDate = '', maxWeightUnit = preferredUnit as string;
     let maxReps = 0, maxRepsDate = '';
 
     for (const set of working) {
       const w = set.weight_value!;
       const r = set.reps!;
       const e1rm = estimateOneRepMax(w, r);
-      const unit = set.weight_unit || 'kg';
+      const unit = set.weight_unit || preferredUnit;
 
       if (e1rm > bestE1rm) { bestE1rm = e1rm; bestE1rmDate = set.performed_at; bestE1rmUnit = unit; }
       if (w > maxWeight) { maxWeight = w; maxWeightDate = set.performed_at; maxWeightUnit = unit; }
@@ -236,7 +245,7 @@ export default function ExerciseChartScreen() {
       maxWeight, maxWeightDate, maxWeightUnit,
       maxReps, maxRepsDate,
     };
-  }, [allSets]);
+  }, [allSets, preferredUnit]);
 
   // --------------------------------------------------------------------------
   // Compute: metric-specific data points for the text-based chart
@@ -283,7 +292,7 @@ export default function ExerciseChartScreen() {
     : null;
 
   // Derive display unit from actual data (allTimeBests or latest set)
-  const dataUnit = allTimeBests?.bestE1rmUnit ?? (allSets.length > 0 ? (allSets[allSets.length - 1]!.weight_unit || 'kg') : 'kg');
+  const dataUnit = allTimeBests?.bestE1rmUnit ?? (allSets.length > 0 ? (allSets[allSets.length - 1]!.weight_unit || preferredUnit) : preferredUnit);
   const metricUnit = activeMetric === 'rpe' ? '' : ` ${dataUnit}`;
 
   const trend = useMemo(() => {
@@ -603,7 +612,7 @@ export default function ExerciseChartScreen() {
                             <Text className="text-label text-[9px] mr-0.5">W </Text>
                           )}
                           <Text className="text-ambient text-[10px]">
-                            {weightDisplay}{set.weight_unit === 'lb' ? 'lb' : 'kg'} {'\u00D7'} {repsDisplay}
+                            {weightDisplay}{set.weight_unit || preferredUnit} {'\u00D7'} {repsDisplay}
                           </Text>
                           {set.rpe !== null && (
                             <Text className="text-label text-[9px] ml-1">@{set.rpe}</Text>

@@ -305,17 +305,19 @@ function SessionCard({
   stats,
   isHero,
   onPress,
+  weightUnit,
 }: {
   session: SessionRow;
   stats: SessionStats | undefined;
   isHero: boolean;
   onPress: () => void;
+  weightUnit: 'kg' | 'lb';
 }) {
   const dateLabel = formatSessionDate(session.started_at);
   const durationLabel = session.duration_seconds
     ? formatDuration(session.duration_seconds)
     : null;
-  const volumeLabel = stats ? formatVolume(stats.volume, 'kg') : '\u2014';
+  const volumeLabel = stats ? formatVolume(stats.volume, weightUnit) : '\u2014';
   const setCountLabel = stats ? String(stats.setCount) : '0';
   const rpeLabel = stats?.avgRPE !== null && stats?.avgRPE !== undefined
     ? stats.avgRPE.toFixed(1)
@@ -439,6 +441,14 @@ export default function HistoryFeedScreen() {
   // Data queries
   // -------------------------------------------------------------------------
 
+  const { data: userRows } = useQuery(
+    userId
+      ? `SELECT default_unit FROM users WHERE id = ?`
+      : `SELECT 1 WHERE 0`,
+    userId ? [userId] : [],
+  ) as { data: Array<{ default_unit: string }> | undefined };
+  const preferredUnit = (userRows?.[0]?.default_unit as 'kg' | 'lb') ?? 'kg';
+
   const { data: sessions } = useCompletedSessions(userId);
   const { data: allSets } = useSessionSets(userId);
   const { data: monthSessionData } = useMonthSessionCount(userId);
@@ -522,11 +532,12 @@ export default function HistoryFeedScreen() {
             stats={statsMap.get(item.session.id)}
             isHero={item.isHero}
             onPress={() => handleSessionPress(item.session.id)}
+            weightUnit={preferredUnit}
           />
         </View>
       );
     },
-    [statsMap, handleSessionPress],
+    [statsMap, handleSessionPress, preferredUnit],
   );
 
   const keyExtractor = useCallback((item: ListItem) => item.key, []);

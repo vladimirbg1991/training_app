@@ -98,11 +98,13 @@ export function detectPRs(
     ),
   );
   if (newE1RM > maxHistoricalE1RM) {
+    // Display the e1rm in the user's original unit for the description
+    const displayE1RM = estimateOneRepMax(newSet.weightValue, newSet.reps);
     prs.push({
       type: 'estimated_1rm',
       value: Math.round(newE1RM * 10) / 10,
       previousValue: Math.round(maxHistoricalE1RM * 10) / 10,
-      description: `New est. 1RM: ${Math.round(newE1RM)} kg on ${exerciseName}`,
+      description: `New est. 1RM: ${Math.round(displayE1RM)} ${newSet.weightUnit} on ${exerciseName}`,
     });
   }
 

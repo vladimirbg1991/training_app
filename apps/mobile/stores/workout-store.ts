@@ -531,6 +531,23 @@ export const workoutStore = createStore<WorkoutState & WorkoutActions>()(
       const existingSets = state.confirmedSets[draft.exerciseId] ?? [];
       const setIndex = existingSets.length;
 
+      // Fetch the user's latest bodyweight from SQLite (non-critical)
+      let bodyweightAtTime: number | null = null;
+      let bodyweightUnit: string | null = null;
+      try {
+        const bwRows = await db.getAll<{ weight_value: number; weight_unit: string }>(
+          `SELECT current_bodyweight_value AS weight_value, current_bodyweight_unit AS weight_unit
+           FROM users WHERE id = ? LIMIT 1`,
+          [userId],
+        );
+        if (bwRows.length > 0 && bwRows[0]!.weight_value != null) {
+          bodyweightAtTime = bwRows[0]!.weight_value;
+          bodyweightUnit = bwRows[0]!.weight_unit;
+        }
+      } catch {
+        // Non-critical — continue without bodyweight
+      }
+
       // Step 1-3: SQLite writes in a single transaction
       await db.writeTransaction(async (tx) => {
         await tx.execute(
@@ -556,8 +573,8 @@ export const workoutStore = createStore<WorkoutState & WorkoutActions>()(
             0, // isPersonalRecord — computed in saveWorkout() or server-side
             now,
             exercise.gymEquipmentInstanceId,
-            draft.bodyweightAtTime,
-            draft.bodyweightUnit,
+            bodyweightAtTime,
+            bodyweightUnit,
             now,
             now,
           ],

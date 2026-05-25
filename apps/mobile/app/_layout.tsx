@@ -10,7 +10,7 @@ import * as Sentry from '@sentry/react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { tokenCache } from '@/lib/auth/token-cache';
 import { useUserType } from '@/lib/auth/use-user-type';
-import { useWorkoutStore } from '@/stores/workout-store';
+import { useWorkoutStore, workoutStore } from '@/stores/workout-store';
 import { loadSnapshot } from '@/stores/mmkv';
 import { PowerSyncProvider } from '@/lib/powersync';
 import { AnalyticsProvider } from '@/lib/analytics';
@@ -76,7 +76,11 @@ function AuthGate(): React.JSX.Element {
     if (!snapshot) return;
     restoreFromSnapshot(user.id)
       .then(() => {
-        router.replace('/(lifter)/(workout)/active');
+        // Only navigate if restore actually succeeded (status is 'active')
+        const { status } = workoutStore.getState();
+        if (status === 'active') {
+          router.replace('/(lifter)/(workout)/active');
+        }
       })
       .catch(() => {
         // Restore failed — snapshot was stale or corrupted. Stay idle.

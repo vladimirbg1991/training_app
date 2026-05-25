@@ -19,7 +19,7 @@ import { useUser } from '@clerk/clerk-expo';
 import { useQuery } from '@powersync/react-native';
 import { IconChevronLeft, IconChevronRight, IconFlame, IconList } from '@tabler/icons-react-native';
 
-import { computeStreak, formatVolume, formatDuration } from '@gym-app/fitness-logic';
+import { computeStreak, formatVolume, formatDuration, convertWeight } from '@gym-app/fitness-logic';
 import { Colors } from '@/constants/colors';
 
 // ============================================================================
@@ -132,6 +132,14 @@ export default function CalendarStreakScreen() {
   const router = useRouter();
   const { user } = useUser();
   const userId = user?.id ?? '';
+
+  const { data: userRows } = useQuery(
+    userId
+      ? `SELECT default_unit FROM users WHERE id = ?`
+      : `SELECT 1 WHERE 0`,
+    userId ? [userId] : [],
+  ) as { data: Array<{ default_unit: string }> | undefined };
+  const preferredUnit = (userRows?.[0]?.default_unit as 'kg' | 'lb') ?? 'kg';
 
   const now = new Date();
   const [viewYear, setViewYear] = useState(now.getFullYear());
@@ -496,7 +504,7 @@ export default function CalendarStreakScreen() {
                     {session.total_sets} sets
                   </Text>
                   <Text className="text-ambient text-[10px]">
-                    {formatVolume(session.total_volume, 'kg')}
+                    {formatVolume(convertWeight(session.total_volume, 'kg', preferredUnit), preferredUnit)}
                   </Text>
                   {session.duration_seconds !== null && session.duration_seconds > 0 && (
                     <Text className="text-ambient text-[10px]">

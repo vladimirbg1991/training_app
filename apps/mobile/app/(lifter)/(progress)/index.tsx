@@ -19,7 +19,7 @@ import {
   IconChevronRight,
 } from '@tabler/icons-react-native';
 
-import { estimateOneRepMax, formatVolume, roundToHalf } from '@gym-app/fitness-logic';
+import { estimateOneRepMax, formatVolume, roundToHalf, convertWeight } from '@gym-app/fitness-logic';
 import { Colors } from '@/constants/colors';
 
 // ============================================================================
@@ -183,6 +183,7 @@ interface ExerciseTrendResult {
 function computeExerciseTrends(
   exercises: ExerciseTrendRow[],
   sets: ExerciseSetRow[],
+  defaultUnit: 'kg' | 'lb' = 'kg',
 ): { trendingUp: ExerciseTrendResult[]; stuck: ExerciseTrendResult[] } {
   const now = Date.now();
   const fourteenDaysMs = 14 * 24 * 60 * 60 * 1000;
@@ -205,12 +206,12 @@ function computeExerciseTrends(
     if (recentSets.length === 0 || olderSets.length === 0) continue;
 
     let recentBestE1RM = 0;
-    let recentBestUnit = 'kg';
+    let recentBestUnit = defaultUnit as string;
     for (const s of recentSets) {
       const e1rm = estimateOneRepMax(s.weight_value ?? 0, s.reps ?? 0);
       if (e1rm > recentBestE1RM) {
         recentBestE1RM = e1rm;
-        recentBestUnit = s.weight_unit || 'kg';
+        recentBestUnit = s.weight_unit || defaultUnit;
       }
     }
     const olderBestE1RM = Math.max(
@@ -373,6 +374,18 @@ export default function ProgressDashboardScreen() {
   const userId = user?.id ?? '';
 
   // -------------------------------------------------------------------------
+  // User preferred unit
+  // -------------------------------------------------------------------------
+
+  const { data: userRows } = useQuery(
+    userId
+      ? `SELECT default_unit FROM users WHERE id = ?`
+      : `SELECT 1 WHERE 0`,
+    userId ? [userId] : [],
+  ) as { data: Array<{ default_unit: string }> | undefined };
+  const preferredUnit = (userRows?.[0]?.default_unit as 'kg' | 'lb') ?? 'kg';
+
+  // -------------------------------------------------------------------------
   // Data queries
   // -------------------------------------------------------------------------
 
@@ -418,8 +431,8 @@ export default function ProgressDashboardScreen() {
 
   // Exercise trends
   const { trendingUp, stuck } = useMemo(
-    () => computeExerciseTrends(recentExercises ?? [], exerciseSets ?? []),
-    [recentExercises, exerciseSets],
+    () => computeExerciseTrends(recentExercises ?? [], exerciseSets ?? [], preferredUnit),
+    [recentExercises, exerciseSets, preferredUnit],
   );
 
   // Muscle coverage max for bar scaling
@@ -491,7 +504,7 @@ export default function ProgressDashboardScreen() {
               VOLUME {'\u00B7'} 30D
             </Text>
             <Text className="text-primary text-hero-num font-medium" style={{ letterSpacing: -0.5 }}>
-              {hasData ? formatVolume(currentVolume, 'kg') : '\u2014'}
+              {hasData ? formatVolume(convertWeight(currentVolume, 'kg', preferredUnit), preferredUnit) : '\u2014'}
             </Text>
             {volumeDelta !== null && (
               <Text

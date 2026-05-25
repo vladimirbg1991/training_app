@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useUser } from '@clerk/clerk-expo';
+import { useQuery } from '@powersync/react-native';
 
 import { useWorkoutStore } from '@/stores/workout-store';
 import { useElapsedTime, formatElapsed } from '@/hooks/use-elapsed-time';
@@ -32,6 +33,16 @@ const UNDO_EXPIRY_MS = 5 * 60 * 1000; // 5 minutes — matches store ring buffer
 export default function ActiveWorkoutScreen() {
   const router = useRouter();
   const { user } = useUser();
+  const userId = user?.id ?? '';
+
+  // User preferred unit
+  const { data: userRows } = useQuery(
+    userId
+      ? `SELECT default_unit FROM users WHERE id = ?`
+      : `SELECT 1 WHERE 0`,
+    userId ? [userId] : [],
+  ) as { data: Array<{ default_unit: string }> | undefined };
+  const preferredUnit = (userRows?.[0]?.default_unit as 'kg' | 'lb') ?? 'kg';
 
   // ---------------------------------------------------------------------------
   // Fine-grained store selectors (one per value — Zustand re-renders only
@@ -232,7 +243,7 @@ export default function ActiveWorkoutScreen() {
             onSelectEffort={setSelectedEffort}
             onSave={handleSaveWorkout}
             onAddNote={handleAddNote}
-            weightUnit="kg"
+            weightUnit={preferredUnit}
           />
         </ScrollView>
       </SafeAreaView>
