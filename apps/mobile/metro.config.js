@@ -22,4 +22,7 @@ config.resolver.disableHierarchicalLookup = true;
 // Support package.json "exports" field (used by workspace packages)
 config.resolver.unstable_enablePackageExports = true;
 
+// Prefer "source" condition so Metro resolves raw TypeScript from workspace packages
+config.resolver.unstable_conditionNames = ['source', 'import', 'require'];
+
 module.exports = withNativeWind(config, { input: './global.css' });

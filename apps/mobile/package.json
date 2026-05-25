@@ -11,7 +11,7 @@
     "lint": "eslint .",
     "clean": "rm -rf dist .turbo .expo *.tsbuildinfo node_modules/.cache"
   },
-  "_versionNote": "Versions are approximate for Expo SDK 54. Run `npx expo install --fix` after initial install to align all Expo package versions with the SDK.",
+  "_versionNote": "Targeting Expo SDK 55 (RN 0.79). Run `npx expo install --fix` after initial install to align all Expo package versions with the SDK.",
   "dependencies": {
     "@journeyapps/wa-sqlite": "1.1.0",
     "@clerk/clerk-expo": "2.10.0",
@@ -27,8 +27,9 @@
     "posthog-react-native": "3.3.0",
     "react-native-purchases": "8.2.0",
     "victory-native": "41.12.0",
-    "expo": "~54.0.0",
+    "expo": "~55.0.0",
     "expo-constants": "~17.1.0",
+    "expo-crypto": "~14.0.0",
     "expo-font": "~13.3.0",
     "expo-haptics": "~14.1.0",
     "expo-linking": "~7.1.0",
@@ -53,7 +54,7 @@
   "devDependencies": {
     "@babel/core": "7.27.1",
     "@types/react": "19.1.0",
-    "babel-preset-expo": "~12.1.0",
+    "babel-preset-expo": "~55.0.0",
     "tailwindcss": "3.4.17",
     "typescript": "5.8.3"
   }

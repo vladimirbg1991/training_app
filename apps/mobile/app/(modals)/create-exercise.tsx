@@ -10,6 +10,7 @@
  */
 
 import { useState, useCallback, useMemo } from 'react';
+import * as Crypto from 'expo-crypto';
 import {
   View,
   Text,
@@ -146,7 +147,7 @@ export default function CreateExerciseScreen() {
     setIsSaving(true);
 
     try {
-      const exerciseId = crypto.randomUUID();
+      const exerciseId = Crypto.randomUUID();
       const now = new Date().toISOString();
 
       await db.execute(

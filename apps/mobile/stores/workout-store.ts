@@ -20,6 +20,7 @@
 
 import { createStore, useStore } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
+import * as Crypto from 'expo-crypto';
 import * as Haptics from 'expo-haptics';
 import type { AbstractPowerSyncDatabase } from '@powersync/react-native';
 import type { WeightUnit } from '@gym-app/domain';
@@ -252,7 +253,7 @@ export const workoutStore = createStore<WorkoutState & WorkoutActions>()(
 
     startWorkout: async (params) => {
       const db = getDb();
-      const sessionId = crypto.randomUUID();
+      const sessionId = Crypto.randomUUID();
       const now = Date.now();
       const startedAtIso = new Date(now).toISOString();
 
@@ -525,7 +526,7 @@ export const workoutStore = createStore<WorkoutState & WorkoutActions>()(
       if (!exercise) return;
 
       const db = getDb();
-      const setId = crypto.randomUUID();
+      const setId = Crypto.randomUUID();
       const now = new Date().toISOString();
 
       const existingSets = state.confirmedSets[draft.exerciseId] ?? [];

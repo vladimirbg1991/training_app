@@ -17,6 +17,7 @@
  */
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import * as Crypto from 'expo-crypto';
 import {
   View,
   Text,
@@ -338,7 +339,7 @@ export default function RoutineBuilderScreen() {
           [name.trim(), description.trim() || null, JSON.stringify(exercises), now, routineId, userId],
         );
       } else {
-        const newId = crypto.randomUUID();
+        const newId = Crypto.randomUUID();
         await db.execute(
           `INSERT INTO routines (id, user_id, name, description, exercise_config, visibility, is_shareable, origin_id, created_at, updated_at)
            VALUES (?, ?, ?, ?, ?, 'private', 0, null, ?, ?)`,

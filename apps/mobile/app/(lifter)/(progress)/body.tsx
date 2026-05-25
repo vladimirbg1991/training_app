@@ -8,6 +8,7 @@
  */
 
 import { useState, useMemo, useCallback } from 'react';
+import * as Crypto from 'expo-crypto';
 import { View, Text, Pressable, ScrollView, TextInput, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -236,7 +237,7 @@ export default function BodyMeasurementsScreen() {
       return;
     }
 
-    const id = crypto.randomUUID();
+    const id = Crypto.randomUUID();
     const now = new Date().toISOString();
     const leanMass = bodyFatVal !== null ? weightVal * (1 - bodyFatVal / 100) : null;
 
@@ -264,7 +265,7 @@ export default function BodyMeasurementsScreen() {
       return;
     }
 
-    const id = crypto.randomUUID();
+    const id = Crypto.randomUUID();
     const now = new Date().toISOString();
 
     await db.execute(

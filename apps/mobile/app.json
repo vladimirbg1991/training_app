@@ -9,9 +9,16 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "platforms": ["ios", "android"],
+    "icon": "./assets/icon.png",
     "ios": {
       "bundleIdentifier": "com.pulse.fitness",
-      "supportsTablet": false
+      "supportsTablet": false,
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Pulse uses the camera to scan gym equipment QR codes.",
+        "NSHealthShareUsageDescription": "Pulse reads your workouts from Apple Health to show a complete training history.",
+        "NSHealthUpdateUsageDescription": "Pulse writes completed workouts to Apple Health."
+      }
     },
     "android": {
       "package": "com.pulse.fitness",
@@ -22,14 +29,17 @@
     "plugins": [
       "expo-router",
       "@sentry/react-native",
+      "expo-crypto",
       "expo-font",
       "expo-haptics",
+      "expo-secure-store",
       [
         "expo-splash-screen",
         {
           "backgroundColor": "#0A1410"
         }
-      ]
+      ],
+      "react-native-mmkv"
     ],
     "experiments": {
       "typedRoutes": true
