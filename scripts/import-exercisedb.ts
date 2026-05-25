@@ -77,7 +77,7 @@ async function main(): Promise<void> {
   console.log(`[import] Dry run: ${String(DRY_RUN)}`);
 
   // ---- Connect to Postgres -------------------------------------------------
-  const sql = postgres(databaseUrl, { ssl: 'require' });
+  const sql = postgres(databaseUrl, { ssl: true });
 
   try {
     // ---- Load Core 50 IDs --------------------------------------------------

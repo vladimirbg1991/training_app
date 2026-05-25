@@ -20,6 +20,7 @@ const USER_TYPE_OPTIONS: {
   subtitle: string;
   Icon: React.ComponentType<{ size: number; color: string }>;
 }[] = [
+
   {
     key: 'lifter',
     title: 'Lifter',
@@ -39,13 +40,6 @@ const USER_TYPE_OPTIONS: {
     Icon: IconBuilding,
   },
 ];
-
-/** Route for each user type after onboarding selection. */
-const USER_TYPE_ROUTES: Record<UserType, string> = {
-  lifter: '/(lifter)/(home)',
-  trainer: '/(trainer)/(home)',
-  gym: '/(gym)/(dashboard)',
-};
 
 export default function UserTypeScreen() {
   const router = useRouter();

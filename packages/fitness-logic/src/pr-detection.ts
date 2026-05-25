@@ -4,6 +4,8 @@ import { normalizeToKg } from './unit-conversion.js';
 interface HistoricalSet {
   weight_value: number | null;
   weight_unit: string | null;
+  bodyweight_at_time?: number | null;
+  bodyweight_unit?: string | null;
   reps: number | null;
   pin_position: number | null;
   is_warmup: number; // SQLite boolean
@@ -24,6 +26,8 @@ export function detectPRs(
   newSet: {
     weightValue: number | null;
     weightUnit: string;
+    bodyweightAtTime?: number | null;
+    bodyweightUnit?: string | null;
     reps: number | null;
     pinPosition: number | null;
     isWarmup: boolean;
@@ -31,46 +35,54 @@ export function detectPRs(
   history: HistoricalSet[],
   exerciseName: string,
 ): PRResult[] {
-  if (newSet.isWarmup || !newSet.weightValue || !newSet.reps) return [];
+  const effectiveWeight = newSet.weightValue ?? newSet.bodyweightAtTime ?? null;
+  if (newSet.isWarmup || !effectiveWeight || !newSet.reps) return [];
+  const effectiveUnit = newSet.weightValue != null ? newSet.weightUnit : (newSet.bodyweightUnit ?? 'kg');
 
   const workingSets = history.filter(
-    (h) => h.is_warmup === 0 && h.weight_value && h.reps,
+    (h) => h.is_warmup === 0 && (h.weight_value || h.bodyweight_at_time) && h.reps,
   );
 
   // First-ever working set is always a PR
   if (workingSets.length === 0) {
     const prs: PRResult[] = [];
-    if (newSet.weightValue > 0) {
+    if (effectiveWeight > 0) {
       prs.push({
         type: 'weight',
-        value: newSet.weightValue,
+        value: effectiveWeight,
         previousValue: null,
-        description: `First ${exerciseName} PR: ${newSet.weightValue} ${newSet.weightUnit}`,
+        description: `First ${exerciseName} PR: ${effectiveWeight} ${effectiveUnit}`,
       });
     }
     return prs;
   }
 
-  const newWeightKg = normalizeToKg(newSet.weightValue, newSet.weightUnit as 'kg' | 'lb');
+  const newWeightKg = normalizeToKg(effectiveWeight, effectiveUnit as 'kg' | 'lb');
   const prs: PRResult[] = [];
 
   // Weight PR: heaviest weight lifted at any rep count (normalized to kg)
   const maxHistoricalWeightKg = Math.max(
-    ...workingSets.map((h) => normalizeToKg(h.weight_value!, (h.weight_unit ?? 'kg') as 'kg' | 'lb')),
+    ...workingSets.map((h) => {
+      const hw = h.weight_value ?? h.bodyweight_at_time ?? 0;
+      const hu = (h.weight_value != null ? h.weight_unit : h.bodyweight_unit) ?? 'kg';
+      return normalizeToKg(hw, hu as 'kg' | 'lb');
+    }),
   );
   if (newWeightKg > maxHistoricalWeightKg) {
     prs.push({
       type: 'weight',
-      value: newSet.weightValue,
+      value: effectiveWeight,
       previousValue: maxHistoricalWeightKg,
-      description: `New weight PR: ${newSet.weightValue} ${newSet.weightUnit} on ${exerciseName}`,
+      description: `New weight PR: ${effectiveWeight} ${effectiveUnit} on ${exerciseName}`,
     });
   }
 
   // Reps PR: most reps at the same or higher weight (normalized to kg)
-  const setsAtSameOrHigherWeight = workingSets.filter(
-    (h) => normalizeToKg(h.weight_value!, (h.weight_unit ?? 'kg') as 'kg' | 'lb') >= newWeightKg,
-  );
+  const setsAtSameOrHigherWeight = workingSets.filter((h) => {
+    const hw = h.weight_value ?? h.bodyweight_at_time ?? 0;
+    const hu = (h.weight_value != null ? h.weight_unit : h.bodyweight_unit) ?? 'kg';
+    return normalizeToKg(hw, hu as 'kg' | 'lb') >= newWeightKg;
+  });
   if (setsAtSameOrHigherWeight.length > 0) {
     const maxRepsAtWeight = Math.max(
       ...setsAtSameOrHigherWeight.map((h) => h.reps!),
@@ -80,7 +92,7 @@ export function detectPRs(
         type: 'reps',
         value: newSet.reps,
         previousValue: maxRepsAtWeight,
-        description: `New reps PR: ${newSet.weightValue} ${newSet.weightUnit} × ${newSet.reps} on ${exerciseName}`,
+        description: `New reps PR: ${effectiveWeight} ${effectiveUnit} × ${newSet.reps} on ${exerciseName}`,
       });
     }
   }
@@ -88,18 +100,20 @@ export function detectPRs(
   // Estimated 1RM PR (always compare in kg for consistency)
   const newE1RM = estimateOneRepMax(newWeightKg, newSet.reps);
   const maxHistoricalE1RM = Math.max(
-    ...workingSets.map((h) =>
-      estimateOneRepMax(normalizeToKg(h.weight_value!, (h.weight_unit ?? 'kg') as 'kg' | 'lb'), h.reps!),
-    ),
+    ...workingSets.map((h) => {
+      const hw = h.weight_value ?? h.bodyweight_at_time ?? 0;
+      const hu = (h.weight_value != null ? h.weight_unit : h.bodyweight_unit) ?? 'kg';
+      return estimateOneRepMax(normalizeToKg(hw, hu as 'kg' | 'lb'), h.reps!);
+    }),
   );
   if (newE1RM > maxHistoricalE1RM) {
     // Display the e1rm in the user's original unit for the description
-    const displayE1RM = estimateOneRepMax(newSet.weightValue, newSet.reps);
+    const displayE1RM = estimateOneRepMax(effectiveWeight, newSet.reps);
     prs.push({
       type: 'estimated_1rm',
       value: Math.round(newE1RM * 10) / 10,
       previousValue: Math.round(maxHistoricalE1RM * 10) / 10,
-      description: `New est. 1RM: ${Math.round(displayE1RM)} ${newSet.weightUnit} on ${exerciseName}`,
+      description: `New est. 1RM: ${Math.round(displayE1RM)} ${effectiveUnit} on ${exerciseName}`,
     });
   }
 
@@ -115,18 +129,25 @@ export function isPRPace(
   draftReps: number | null,
   draftWeightUnit: string,
   history: HistoricalSet[],
+  draftBodyweightAtTime?: number | null,
+  draftBodyweightUnit?: string | null,
 ): boolean {
-  if (!draftWeight || !draftReps) return false;
+  const effectiveWeight = draftWeight ?? draftBodyweightAtTime ?? null;
+  if (!effectiveWeight || !draftReps) return false;
+  const effectiveUnit = draftWeight != null ? draftWeightUnit : (draftBodyweightUnit ?? 'kg');
+
   const workingSets = history.filter(
-    (h) => h.is_warmup === 0 && h.weight_value && h.reps,
+    (h) => h.is_warmup === 0 && (h.weight_value || h.bodyweight_at_time) && h.reps,
   );
   if (workingSets.length === 0) return true; // First-ever set is always PR pace
 
-  const newE1RM = estimateOneRepMax(normalizeToKg(draftWeight, draftWeightUnit as 'kg' | 'lb'), draftReps);
+  const newE1RM = estimateOneRepMax(normalizeToKg(effectiveWeight, effectiveUnit as 'kg' | 'lb'), draftReps);
   const maxE1RM = Math.max(
-    ...workingSets.map((h) =>
-      estimateOneRepMax(normalizeToKg(h.weight_value!, (h.weight_unit ?? 'kg') as 'kg' | 'lb'), h.reps!),
-    ),
+    ...workingSets.map((h) => {
+      const hw = h.weight_value ?? h.bodyweight_at_time ?? 0;
+      const hu = (h.weight_value != null ? h.weight_unit : h.bodyweight_unit) ?? 'kg';
+      return estimateOneRepMax(normalizeToKg(hw, hu as 'kg' | 'lb'), h.reps!);
+    }),
   );
   return newE1RM > maxE1RM;
 }

@@ -173,8 +173,8 @@ values (
   'Barbell Deadlift',
   E'Stand with your mid-foot under the bar, feet hip-width apart. Hinge at the hips and grip the bar just outside your knees with either a double overhand or mixed grip.\nDrive through your feet, extend your hips and knees simultaneously, and pull the bar up your shins and thighs until you are standing tall with your shoulders back.\nReverse the movement by pushing your hips back first, then bending your knees once the bar passes them, and return the bar to the floor under control.',
   'back',
-  'glutes',
-  '["hamstrings", "lats", "trapezius"]'::jsonb,
+  'spinal erectors',
+  '["glutes", "hamstrings", "lats", "trapezius"]'::jsonb,
   (select id from equipment where name = 'Barbell'),
   false,
   '0008'

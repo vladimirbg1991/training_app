@@ -33,6 +33,8 @@ interface SetRow {
   session_id: string;
   weight_value: number | null;
   weight_unit: string;
+  bodyweight_at_time: number | null;
+  bodyweight_unit: string | null;
   reps: number | null;
   rpe: number | null;
   is_warmup: number;
@@ -156,7 +158,8 @@ export default function ExerciseChartScreen() {
   // --------------------------------------------------------------------------
   const { data: setRows } = useQuery(
     exerciseId && userId
-      ? `SELECT ws.id, ws.session_id, ws.weight_value, ws.weight_unit, ws.reps,
+      ? `SELECT ws.id, ws.session_id, ws.weight_value, ws.weight_unit,
+                ws.bodyweight_at_time, ws.bodyweight_unit, ws.reps,
                 ws.rpe, ws.is_warmup, ws.is_personal_record, ws.performed_at,
                 s.started_at AS session_started_at, s.name AS session_name
          FROM workout_sets ws
@@ -200,13 +203,14 @@ export default function ExerciseChartScreen() {
       }
       group.sets.push(set);
 
-      if (!set.is_warmup && set.weight_value && set.reps) {
-        const e1rm = estimateOneRepMax(set.weight_value, set.reps);
+      const effectiveWeight = set.weight_value ?? set.bodyweight_at_time ?? null;
+      if (!set.is_warmup && effectiveWeight && set.reps) {
+        const e1rm = estimateOneRepMax(effectiveWeight, set.reps);
         if (e1rm > group.bestE1rm) {
           group.bestE1rm = e1rm;
-          group.bestE1rmUnit = set.weight_unit || preferredUnit;
+          group.bestE1rmUnit = (set.weight_value != null ? set.weight_unit : set.bodyweight_unit) || preferredUnit;
         }
-        group.totalVolume += set.weight_value * set.reps;
+        group.totalVolume += effectiveWeight * set.reps;
       }
     }
 
@@ -222,7 +226,7 @@ export default function ExerciseChartScreen() {
   // Compute all-time bests (across ALL data, not range-filtered)
   // --------------------------------------------------------------------------
   const allTimeBests = useMemo(() => {
-    const working = allSets.filter((s) => !s.is_warmup && s.weight_value && s.reps);
+    const working = allSets.filter((s) => !s.is_warmup && (s.weight_value || s.bodyweight_at_time) && s.reps);
     if (working.length === 0) return null;
 
     let bestE1rm = 0, bestE1rmDate = '', bestE1rmUnit = preferredUnit as string;
@@ -230,10 +234,10 @@ export default function ExerciseChartScreen() {
     let maxReps = 0, maxRepsDate = '';
 
     for (const set of working) {
-      const w = set.weight_value!;
+      const w = set.weight_value ?? set.bodyweight_at_time ?? 0;
       const r = set.reps!;
       const e1rm = estimateOneRepMax(w, r);
-      const unit = set.weight_unit || preferredUnit;
+      const unit = (set.weight_value != null ? set.weight_unit : set.bodyweight_unit) || preferredUnit;
 
       if (e1rm > bestE1rm) { bestE1rm = e1rm; bestE1rmDate = set.performed_at; bestE1rmUnit = unit; }
       if (w > maxWeight) { maxWeight = w; maxWeightDate = set.performed_at; maxWeightUnit = unit; }
@@ -256,7 +260,7 @@ export default function ExerciseChartScreen() {
     const last10 = chronological.slice(-10);
 
     return last10.map((group) => {
-      const working = group.sets.filter((s) => !s.is_warmup && s.weight_value && s.reps);
+      const working = group.sets.filter((s) => !s.is_warmup && (s.weight_value || s.bodyweight_at_time) && s.reps);
       if (working.length === 0) return { date: group.date, value: 0 };
 
       switch (activeMetric) {
@@ -265,7 +269,8 @@ export default function ExerciseChartScreen() {
         case 'top_set': {
           let topWeight = 0;
           for (const s of working) {
-            if (s.weight_value! > topWeight) topWeight = s.weight_value!;
+            const ew = s.weight_value ?? s.bodyweight_at_time ?? 0;
+            if (ew > topWeight) topWeight = ew;
           }
           return { date: group.date, value: topWeight };
         }
@@ -595,7 +600,9 @@ export default function ExerciseChartScreen() {
                   {/* Set chips */}
                   <View className="flex-row flex-wrap gap-1.5">
                     {group.sets.map((set) => {
-                      const weightDisplay = set.weight_value !== null ? String(set.weight_value) : '\u2014';
+                      const displayWeight = set.weight_value ?? set.bodyweight_at_time ?? null;
+                      const displayUnit = (set.weight_value != null ? set.weight_unit : set.bodyweight_unit) || preferredUnit;
+                      const weightDisplay = displayWeight !== null ? String(displayWeight) : '\u2014';
                       const repsDisplay = set.reps !== null ? String(set.reps) : '\u2014';
                       const isPR = set.is_personal_record === 1;
                       const isWarmup = set.is_warmup === 1;
@@ -612,7 +619,7 @@ export default function ExerciseChartScreen() {
                             <Text className="text-label text-[9px] mr-0.5">W </Text>
                           )}
                           <Text className="text-ambient text-[10px]">
-                            {weightDisplay}{set.weight_unit || preferredUnit} {'\u00D7'} {repsDisplay}
+                            {weightDisplay}{displayUnit} {'\u00D7'} {repsDisplay}
                           </Text>
                           {set.rpe !== null && (
                             <Text className="text-label text-[9px] ml-1">@{set.rpe}</Text>

@@ -63,8 +63,9 @@ function AuthGate(): React.JSX.Element {
   const restoreFromSnapshot = useWorkoutStore((s) => s.restoreFromSnapshot);
   const workoutStatus = useWorkoutStore((s) => s.status);
 
-  // Stabilize the dependency — only re-run when the first segment changes
+  // Stabilize the dependency — only re-run when the segment primitives change
   const firstSegment = segments[0];
+  const secondSegment = segments[1];
 
   // Restore in-progress workout from MMKV on cold launch.
   // The useUser() hook provides the Clerk userId needed for SQLite reconciliation.
@@ -95,7 +96,15 @@ function AuthGate(): React.JSX.Element {
     SplashScreen.hideAsync();
 
     const inAuthGroup = firstSegment === '(auth)';
-    const secondSegment = segments[1];
+
+    // Check whether the user is already inside their correct tab group
+    // or in a shared group like (modals). This prevents a redirect loop
+    // when they navigate within their group or open a modal overlay.
+    const inCorrectGroup =
+      firstSegment === '(modals)' ||
+      (userType === 'lifter' && firstSegment === '(lifter)') ||
+      (userType === 'trainer' && firstSegment === '(trainer)') ||
+      (userType === 'gym' && firstSegment === '(gym)');
 
     if (!isSignedIn && !inAuthGroup) {
       // Not signed in → redirect to welcome
@@ -118,9 +127,25 @@ function AuthGate(): React.JSX.Element {
         default:
           router.replace('/(lifter)/(home)');
       }
+    } else if (isSignedIn && userType && !inAuthGroup && !inCorrectGroup) {
+      // Authenticated user at root or in the wrong group — redirect to their home.
+      // This fires on cold launch (firstSegment === undefined) or if a lifter
+      // somehow lands in (trainer), etc. It does NOT fire when the user is
+      // already inside their own tab group, avoiding a redirect loop.
+      switch (userType) {
+        case 'trainer':
+          router.replace('/(trainer)/(home)');
+          break;
+        case 'gym':
+          router.replace('/(gym)/(dashboard)');
+          break;
+        case 'lifter':
+        default:
+          router.replace('/(lifter)/(home)');
+      }
     }
     // If signed in without userType AND in auth group → stay (let them complete onboarding)
-  }, [isSignedIn, isLoaded, firstSegment, userType, segments]);
+  }, [isSignedIn, isLoaded, firstSegment, secondSegment, userType, router]);
 
   return <Slot />;
 }
