@@ -4,13 +4,17 @@ import { Slot, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { ClerkProvider, useAuth } from '@clerk/clerk-expo';
+import { ClerkProvider, useAuth, useUser } from '@clerk/clerk-expo';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Sentry from '@sentry/react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { tokenCache } from '@/lib/auth/token-cache';
 import { useUserType } from '@/lib/auth/use-user-type';
+import { useWorkoutStore } from '@/stores/workout-store';
+import { loadSnapshot } from '@/stores/mmkv';
 import { PowerSyncProvider } from '@/lib/powersync';
+import { AnalyticsProvider } from '@/lib/analytics';
+import { PurchasesProvider } from '@/lib/purchases';
 
 // Keep splash screen visible while Clerk loads
 SplashScreen.preventAutoHideAsync();
@@ -54,9 +58,25 @@ function AuthGate(): React.JSX.Element {
   const userType = useUserType();
   const segments = useSegments();
   const router = useRouter();
+  const restoreFromSnapshot = useWorkoutStore((s) => s.restoreFromSnapshot);
+  const workoutStatus = useWorkoutStore((s) => s.status);
 
   // Stabilize the dependency — only re-run when the first segment changes
   const firstSegment = segments[0];
+
+  // Restore in-progress workout from MMKV on cold launch.
+  // The useUser() hook provides the Clerk userId needed for SQLite reconciliation.
+  const { user } = useUser();
+
+  useEffect(() => {
+    if (!isLoaded || !isSignedIn || !user?.id) return;
+    if (workoutStatus !== 'idle') return;
+    const snapshot = loadSnapshot();
+    if (!snapshot) return;
+    restoreFromSnapshot(user.id).catch(() => {
+      // Restore failed — snapshot was stale or corrupted. Stay idle.
+    });
+  }, [isLoaded, isSignedIn, user?.id, workoutStatus, restoreFromSnapshot]);
 
   useEffect(() => {
     if (!isLoaded) return;
@@ -95,16 +115,20 @@ function AuthGate(): React.JSX.Element {
 function RootLayout(): React.JSX.Element {
   return (
     <ClerkProvider publishableKey={clerkPublishableKey} tokenCache={tokenCache}>
-      <QueryClientProvider client={queryClient}>
-        <GestureHandlerRootView style={{ flex: 1 }}>
-          <SafeAreaProvider>
-            <PowerSyncProvider>
-              <StatusBar style="light" />
-              <AuthGate />
-            </PowerSyncProvider>
-          </SafeAreaProvider>
-        </GestureHandlerRootView>
-      </QueryClientProvider>
+      <AnalyticsProvider>
+        <PurchasesProvider>
+          <QueryClientProvider client={queryClient}>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <SafeAreaProvider>
+                <PowerSyncProvider>
+                  <StatusBar style="light" />
+                  <AuthGate />
+                </PowerSyncProvider>
+              </SafeAreaProvider>
+            </GestureHandlerRootView>
+          </QueryClientProvider>
+        </PurchasesProvider>
+      </AnalyticsProvider>
     </ClerkProvider>
   );
 }

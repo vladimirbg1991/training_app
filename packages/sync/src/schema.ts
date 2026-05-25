@@ -275,3 +275,64 @@ export const exerciseSubstitutions = pgTable('exercise_substitutions', {
   substituteIdIdx: index('exercise_subs_substitute_id_idx').on(t.substituteId),
   exerciseSubstituteUniq: unique('exercise_substitutions_exercise_id_substitute_id_key').on(t.exerciseId, t.substituteId),
 }));
+
+// ============================================================================
+// user_subscriptions (Migration 0003 — RevenueCat entitlements mirror)
+// ============================================================================
+
+export const userSubscriptions = pgTable('user_subscriptions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').notNull(),
+  tier: text('tier', { enum: ['free', 'trial', 'premium'] }).notNull().default('free'),
+  productId: text('product_id'),
+  platform: text('platform', { enum: ['ios', 'android', 'web'] }),
+  expiresAt: timestamp('expires_at', { withTimezone: true }),
+  originalPurchaseAt: timestamp('original_purchase_at', { withTimezone: true }),
+  isActive: boolean('is_active').notNull().default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  userIdIdx: index('subscriptions_user_id_idx').on(t.userId),
+}));
+
+// ============================================================================
+// body_measurements (Migration 0003 — weight, body fat, lean mass)
+// ============================================================================
+
+export const bodyMeasurements = pgTable('body_measurements', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').notNull(),
+  recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull(),
+  weightValue: real('weight_value'),
+  weightUnit: text('weight_unit', { enum: ['kg', 'lb'] }),
+  bodyFatPercent: real('body_fat_percent'),
+  leanMassValue: real('lean_mass_value'),
+  leanMassUnit: text('lean_mass_unit', { enum: ['kg', 'lb'] }),
+  notes: text('notes'),
+  externalSyncId: text('external_sync_id'),
+  syncSource: text('sync_source', { enum: ['app', 'healthkit', 'health_connect'] }).notNull().default('app'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  userIdIdx: index('body_measurements_user_id_idx').on(t.userId),
+  recordedAtIdx: index('body_measurements_recorded_at_idx').on(t.recordedAt),
+}));
+
+// ============================================================================
+// body_circumference (Migration 0003 — per-site measurements)
+// ============================================================================
+
+export const bodyCircumference = pgTable('body_circumference', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').notNull(),
+  site: text('site').notNull(),
+  customLabel: text('custom_label'),
+  valueCm: real('value_cm').notNull(),
+  recordedAt: timestamp('recorded_at', { withTimezone: true }).notNull(),
+  notes: text('notes'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  userIdIdx: index('body_circumference_user_id_idx').on(t.userId),
+  recordedAtIdx: index('body_circumference_recorded_at_idx').on(t.recordedAt),
+}));

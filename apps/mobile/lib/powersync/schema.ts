@@ -202,7 +202,57 @@ const exercise_substitutions = new Table({
 });
 
 // ============================================================================
-// Export combined schema — all 10 tables
+// user_subscriptions (Migration 0003 — RevenueCat entitlements mirror)
+// ============================================================================
+
+const user_subscriptions = new Table({
+  user_id: column.text,
+  tier: column.text, // free | trial | premium
+  product_id: column.text,
+  platform: column.text,
+  expires_at: column.text,
+  original_purchase_at: column.text,
+  is_active: column.integer, // boolean -> 0/1
+  created_at: column.text,
+  updated_at: column.text,
+});
+
+// ============================================================================
+// body_measurements (Migration 0003 — weight, body fat, lean mass)
+// ============================================================================
+
+const body_measurements = new Table({
+  user_id: column.text,
+  recorded_at: column.text,
+  weight_value: column.real,
+  weight_unit: column.text,
+  body_fat_percent: column.real,
+  lean_mass_value: column.real,
+  lean_mass_unit: column.text,
+  notes: column.text,
+  external_sync_id: column.text,
+  sync_source: column.text,
+  created_at: column.text,
+  updated_at: column.text,
+});
+
+// ============================================================================
+// body_circumference (Migration 0003 — per-site measurements)
+// ============================================================================
+
+const body_circumference = new Table({
+  user_id: column.text,
+  site: column.text,
+  custom_label: column.text,
+  value_cm: column.real,
+  recorded_at: column.text,
+  notes: column.text,
+  created_at: column.text,
+  updated_at: column.text,
+});
+
+// ============================================================================
+// Export combined schema — all 13 tables
 // ============================================================================
 
 export const powersyncSchema = new Schema({
@@ -216,4 +266,7 @@ export const powersyncSchema = new Schema({
   gym_equipment_instances,
   user_exercise_preferences,
   exercise_substitutions,
+  user_subscriptions,
+  body_measurements,
+  body_circumference,
 });
