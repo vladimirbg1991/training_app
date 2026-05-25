@@ -54,12 +54,12 @@ export default function SignInScreen() {
     setLoadingMethod(method);
 
     try {
-      const { createdSessionId } = await startSSOFlow({
+      const { createdSessionId, setActive: ssoSetActive } = await startSSOFlow({
         strategy: provider,
       });
 
-      if (createdSessionId && setActive) {
-        await setActive({ session: createdSessionId });
+      if (createdSessionId && ssoSetActive) {
+        await ssoSetActive({ session: createdSessionId });
         // AuthGate in _layout.tsx handles routing
       }
     } catch (err: unknown) {

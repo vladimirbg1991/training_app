@@ -11,9 +11,9 @@
 -- Equipment and exercises are global catalog data (is_custom = false).
 -- ==========================================================================
 
--- Ensure idempotent exercise inserts: unique external_id for catalog exercises
-create unique index if not exists exercises_external_id_unique_catalog
-  on exercises (external_id) where is_custom = false and external_id is not null;
+-- NOTE: The exercises_external_id_unique_catalog index is now managed by
+-- migration 0004_exercisedb_external_id_index.sql. The migration must be
+-- applied before running this seed script.
 
 -- ==========================================================================
 -- Equipment (12 items)

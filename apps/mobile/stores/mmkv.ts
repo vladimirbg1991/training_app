@@ -43,6 +43,7 @@ export interface WorkoutSnapshot {
   startedAt: number;
   routineId: string | null;
   gymId: string | null;
+  status: 'active' | 'completing';
   exercises: WorkoutExercise[];
   currentExerciseIndex: number;
   confirmedSets: Record<string, ConfirmedSet[]>;

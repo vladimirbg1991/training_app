@@ -33,6 +33,7 @@ import { saveSnapshot, loadSnapshot, clearSnapshot } from './mmkv';
 // ============================================================================
 
 let _db: AbstractPowerSyncDatabase | null = null;
+let _isConfirming = false;
 
 /**
  * Inject the PowerSync database instance into the workout store.
@@ -250,6 +251,8 @@ export const workoutStore = createStore<WorkoutState & WorkoutActions>()(
     // ========================================================================
 
     startWorkout: async (params) => {
+      if (get().status !== 'idle') return;
+
       const db = getDb();
       const sessionId = Crypto.randomUUID();
       const now = Date.now();
@@ -287,6 +290,8 @@ export const workoutStore = createStore<WorkoutState & WorkoutActions>()(
         durationSeconds: 0,
         detectedPRs: [],
       });
+
+      flushWorkoutSnapshot();
     },
 
     abandonWorkout: async (userId) => {
@@ -347,6 +352,8 @@ export const workoutStore = createStore<WorkoutState & WorkoutActions>()(
         restTimer: REST_TIMER_INITIAL,
         draft: null,
       });
+
+      flushWorkoutSnapshot();
     },
 
     /**
@@ -518,116 +525,123 @@ export const workoutStore = createStore<WorkoutState & WorkoutActions>()(
      * that speeds up recovery but is not the source of truth.
      */
     confirmSet: async (userId) => {
-      const state = get();
-      const { draft, sessionId } = state;
-      if (!draft || !sessionId) return;
+      if (_isConfirming) return;
+      _isConfirming = true;
 
-      const exercise = state.exercises[state.currentExerciseIndex];
-      if (!exercise) return;
-
-      const db = getDb();
-      const setId = Crypto.randomUUID();
-      const now = new Date().toISOString();
-
-      const existingSets = state.confirmedSets[draft.exerciseId] ?? [];
-      const setIndex = existingSets.length;
-
-      // Fetch the user's latest bodyweight from SQLite (non-critical)
-      let bodyweightAtTime: number | null = null;
-      let bodyweightUnit: string | null = null;
       try {
-        const bwRows = await db.getAll<{ weight_value: number; weight_unit: string }>(
-          `SELECT current_bodyweight_value AS weight_value, current_bodyweight_unit AS weight_unit
-           FROM users WHERE id = ? LIMIT 1`,
-          [userId],
-        );
-        if (bwRows.length > 0 && bwRows[0]!.weight_value != null) {
-          bodyweightAtTime = bwRows[0]!.weight_value;
-          bodyweightUnit = bwRows[0]!.weight_unit;
+        const state = get();
+        const { draft, sessionId } = state;
+        if (!draft || !sessionId) return;
+
+        const exercise = state.exercises[state.currentExerciseIndex];
+        if (!exercise) return;
+
+        const db = getDb();
+        const setId = Crypto.randomUUID();
+        const now = new Date().toISOString();
+
+        const existingSets = state.confirmedSets[draft.exerciseId] ?? [];
+        const setIndex = existingSets.length;
+
+        // Fetch the user's latest bodyweight from SQLite (non-critical)
+        let bodyweightAtTime: number | null = null;
+        let bodyweightUnit: string | null = null;
+        try {
+          const bwRows = await db.getAll<{ weight_value: number; weight_unit: string }>(
+            `SELECT current_bodyweight_value AS weight_value, current_bodyweight_unit AS weight_unit
+             FROM users WHERE id = ? LIMIT 1`,
+            [userId],
+          );
+          if (bwRows.length > 0 && bwRows[0]!.weight_value != null) {
+            bodyweightAtTime = bwRows[0]!.weight_value;
+            bodyweightUnit = bwRows[0]!.weight_unit;
+          }
+        } catch {
+          // Non-critical — continue without bodyweight
         }
-      } catch {
-        // Non-critical — continue without bodyweight
-      }
 
-      // Step 1-3: SQLite writes in a single transaction
-      await db.writeTransaction(async (tx) => {
-        await tx.execute(
-          `INSERT INTO workout_sets (
-            id, session_id, exercise_id, user_id, set_index,
-            weight_value, weight_unit, reps, pin_position,
-            is_warmup, is_personal_record, performed_at,
-            gym_equipment_instance_id, sync_source,
-            bodyweight_at_time, bodyweight_unit,
-            created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'app', ?, ?, ?, ?)`,
-          [
-            setId,
-            sessionId,
-            draft.exerciseId,
-            userId,
-            setIndex,
-            draft.weightValue,
-            draft.weightUnit,
-            draft.reps,
-            draft.pinPosition,
-            draft.isWarmup ? 1 : 0,
-            0, // isPersonalRecord — computed in saveWorkout() or server-side
-            now,
-            exercise.gymEquipmentInstanceId,
-            bodyweightAtTime,
-            bodyweightUnit,
-            now,
-            now,
-          ],
-        );
+        // Step 1-3: SQLite writes in a single transaction
+        await db.writeTransaction(async (tx) => {
+          await tx.execute(
+            `INSERT INTO workout_sets (
+              id, session_id, exercise_id, user_id, set_index,
+              weight_value, weight_unit, reps, pin_position,
+              is_warmup, is_personal_record, performed_at,
+              gym_equipment_instance_id, sync_source,
+              bodyweight_at_time, bodyweight_unit,
+              created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'app', ?, ?, ?, ?)`,
+            [
+              setId,
+              sessionId,
+              draft.exerciseId,
+              userId,
+              setIndex,
+              draft.weightValue,
+              draft.weightUnit,
+              draft.reps,
+              draft.pinPosition,
+              draft.isWarmup ? 1 : 0,
+              0, // isPersonalRecord — computed in saveWorkout() or server-side
+              now,
+              exercise.gymEquipmentInstanceId,
+              bodyweightAtTime,
+              bodyweightUnit,
+              now,
+              now,
+            ],
+          );
 
-        await tx.execute(
-          `UPDATE workout_sessions SET updated_at = ? WHERE id = ? AND user_id = ?`,
-          [now, sessionId, userId],
-        );
-      });
+          await tx.execute(
+            `UPDATE workout_sessions SET updated_at = ? WHERE id = ? AND user_id = ?`,
+            [now, sessionId, userId],
+          );
+        });
 
-      // Step 4: Haptic feedback — fire and forget (must not block state update)
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
+        // Step 4: Haptic feedback — fire and forget (must not block state update)
+        void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
 
-      // Step 5: Update Zustand state
-      const confirmedSet: ConfirmedSet = {
-        id: setId,
-        exerciseId: draft.exerciseId,
-        setIndex,
-        weightValue: draft.weightValue,
-        weightUnit: draft.weightUnit,
-        reps: draft.reps,
-        pinPosition: draft.pinPosition,
-        isWarmup: draft.isWarmup,
-        isPersonalRecord: false, // computed later
-        performedAt: now,
-        bodyweightAtTime: bodyweightAtTime,
-        bodyweightUnit: (bodyweightUnit as 'kg' | 'lb') ?? null,
-      };
-
-      set((s) => {
-        const exerciseSets = s.confirmedSets[draft.exerciseId] ?? [];
-        return {
-          confirmedSets: {
-            ...s.confirmedSets,
-            [draft.exerciseId]: [...exerciseSets, confirmedSet],
-          },
-          draft: null,
-          // Auto-start rest timer for working (non-warmup) sets
-          restTimer: draft.isWarmup
-            ? s.restTimer
-            : {
-                isActive: true,
-                startedAt: Date.now(),
-                targetSeconds: exercise.restSeconds,
-                label: exercise.exerciseName,
-              },
+        // Step 5: Update Zustand state
+        const confirmedSet: ConfirmedSet = {
+          id: setId,
+          exerciseId: draft.exerciseId,
+          setIndex,
+          weightValue: draft.weightValue,
+          weightUnit: draft.weightUnit,
+          reps: draft.reps,
+          pinPosition: draft.pinPosition,
+          isWarmup: draft.isWarmup,
+          isPersonalRecord: false, // computed later
+          performedAt: now,
+          bodyweightAtTime: bodyweightAtTime,
+          bodyweightUnit: (bodyweightUnit as 'kg' | 'lb') ?? null,
         };
-      });
 
-      // Step 6: Flush MMKV snapshot immediately (don't wait for debounce)
-      flushWorkoutSnapshot();
+        set((s) => {
+          const exerciseSets = s.confirmedSets[draft.exerciseId] ?? [];
+          return {
+            confirmedSets: {
+              ...s.confirmedSets,
+              [draft.exerciseId]: [...exerciseSets, confirmedSet],
+            },
+            draft: null,
+            // Auto-start rest timer for working (non-warmup) sets
+            restTimer: draft.isWarmup
+              ? s.restTimer
+              : {
+                  isActive: true,
+                  startedAt: Date.now(),
+                  targetSeconds: exercise.restSeconds,
+                  label: exercise.exerciseName,
+                },
+          };
+        });
+
+        // Step 6: Flush MMKV snapshot immediately (don't wait for debounce)
+        flushWorkoutSnapshot();
+      } finally {
+        _isConfirming = false;
+      }
     },
 
     discardDraft: () => {
@@ -815,7 +829,7 @@ export const workoutStore = createStore<WorkoutState & WorkoutActions>()(
         startedAt: snapshot.startedAt,
         routineId: snapshot.routineId,
         gymId: snapshot.gymId,
-        status: 'active',
+        status: snapshot.status ?? 'active',
         exercises: snapshot.exercises,
         currentExerciseIndex: snapshot.currentExerciseIndex,
         confirmedSets: reconciledSets, // SQLite is truth, not MMKV
@@ -856,6 +870,7 @@ function flushSnapshot(state: WorkoutState): void {
       startedAt: state.startedAt,
       routineId: state.routineId,
       gymId: state.gymId,
+      status: state.status as 'active' | 'completing',
       exercises: state.exercises,
       currentExerciseIndex: state.currentExerciseIndex,
       confirmedSets: state.confirmedSets,

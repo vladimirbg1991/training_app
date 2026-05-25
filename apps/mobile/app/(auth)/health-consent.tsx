@@ -15,7 +15,7 @@
  */
 
 import { useState, useCallback } from 'react';
-import { View, Text, Pressable, ScrollView, ActivityIndicator, Linking } from 'react-native';
+import { View, Text, Pressable, ScrollView, ActivityIndicator, Linking, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useUser } from '@clerk/expo';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -64,7 +64,15 @@ export default function HealthConsentScreen(): React.JSX.Element {
       const userType = user?.unsafeMetadata?.userType as string | undefined;
       router.replace(getUserTypeRoute(userType));
     } catch {
-      // Silently retry on next app launch
+      // Network error — navigate anyway, consent will be retried on next launch
+      Alert.alert(
+        'Connection issue',
+        'Your consent preference could not be saved. You can update this in Settings later.',
+        [{ text: 'Continue', onPress: () => {
+          const userType = user?.unsafeMetadata?.userType as string | undefined;
+          router.replace(getUserTypeRoute(userType));
+        }}],
+      );
     } finally {
       setLoading(false);
     }

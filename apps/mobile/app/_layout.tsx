@@ -95,6 +95,7 @@ function AuthGate(): React.JSX.Element {
     SplashScreen.hideAsync();
 
     const inAuthGroup = firstSegment === '(auth)';
+    const secondSegment = segments[1];
 
     if (!isSignedIn && !inAuthGroup) {
       // Not signed in → redirect to welcome
@@ -103,6 +104,8 @@ function AuthGate(): React.JSX.Element {
       // Signed in but hasn't completed onboarding → send to user-type
       router.replace('/(auth)/user-type');
     } else if (isSignedIn && userType && inAuthGroup) {
+      // Don't redirect if user is on the health-consent screen
+      if (secondSegment === 'health-consent') return;
       // Signed in with userType but still in auth flow → route to main app
       switch (userType) {
         case 'trainer':
@@ -117,7 +120,7 @@ function AuthGate(): React.JSX.Element {
       }
     }
     // If signed in without userType AND in auth group → stay (let them complete onboarding)
-  }, [isSignedIn, isLoaded, firstSegment, userType]);
+  }, [isSignedIn, isLoaded, firstSegment, userType, segments]);
 
   return <Slot />;
 }
@@ -145,4 +148,4 @@ function RootLayout(): React.JSX.Element {
   );
 }
 
-export default RootLayout;
+export default Sentry.wrap(RootLayout);

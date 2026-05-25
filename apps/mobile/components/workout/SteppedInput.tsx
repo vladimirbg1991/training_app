@@ -65,19 +65,26 @@ export function SteppedInput({
     [value, step, clamp, onChange],
   );
 
+  // Keep refs in sync with the latest increment/decrement so the long-press
+  // interval callback never captures a stale closure over `value`.
+  const incrementRef = useRef(increment);
+  const decrementRef = useRef(decrement);
+  useEffect(() => { incrementRef.current = increment; }, [increment]);
+  useEffect(() => { decrementRef.current = decrement; }, [decrement]);
+
   const startLongPress = useCallback(
     (direction: 'inc' | 'dec') => {
       longPressActiveRef.current = true;
-      const fn = direction === 'inc' ? increment : decrement;
+      const ref = direction === 'inc' ? incrementRef : decrementRef;
       // First half-step fires immediately on long-press trigger
-      fn(true);
-      // Repeat at 150ms intervals
+      ref.current(true);
+      // Repeat at 150ms intervals — reads from ref each tick to avoid stale closure
       intervalRef.current = setInterval(() => {
         if (!longPressActiveRef.current) return;
-        fn(true);
+        ref.current(true);
       }, 150);
     },
-    [increment, decrement],
+    [], // stable — no deps needed, reads latest callbacks via refs
   );
 
   const stopLongPress = useCallback(() => {

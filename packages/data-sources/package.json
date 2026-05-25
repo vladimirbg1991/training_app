@@ -16,10 +16,7 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist .turbo *.tsbuildinfo"
   },
-  "dependencies": {
-    "@gym-app/domain": "workspace:*",
-    "@gym-app/transforms": "workspace:*"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/node": "^22.15.18",
     "typescript": "~5.8.3"

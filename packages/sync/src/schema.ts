@@ -72,7 +72,7 @@ export const exercises = pgTable('exercises', {
   bodyPart: text('body_part'),
   targetMuscle: text('target_muscle'),
   secondaryMuscles: jsonb('secondary_muscles').notNull().default(sql`'[]'::jsonb`),
-  equipmentId: uuid('equipment_id').references(() => equipment.id),
+  equipmentId: uuid('equipment_id').references(() => equipment.id, { onDelete: 'set null' }),
   isCustom: boolean('is_custom').notNull().default(false),
   createdBy: text('created_by'),
   externalId: text('external_id'),
@@ -101,7 +101,7 @@ export const routines = pgTable('routines', {
     enum: ['private', 'trainer_visible', 'gym_visible', 'friends_visible', 'public'],
   }).notNull().default('private'),
   isShareable: boolean('is_shareable').notNull().default(false),
-  originId: uuid('origin_id').references((): AnyPgColumn => routines.id),
+  originId: uuid('origin_id').references((): AnyPgColumn => routines.id, { onDelete: 'set null' }),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => ({
@@ -116,7 +116,7 @@ export const routines = pgTable('routines', {
 export const workoutSessions = pgTable('workout_sessions', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: text('user_id').notNull(),
-  routineId: uuid('routine_id').references(() => routines.id),
+  routineId: uuid('routine_id').references(() => routines.id, { onDelete: 'set null' }),
   name: text('name'),
   status: text('status', {
     enum: ['in_progress', 'completed', 'abandoned'],
@@ -218,9 +218,9 @@ export const workoutSets = pgTable('workout_sets', {
   }).notNull().default('app'),
   performedAt: timestamp('performed_at', { withTimezone: true }).notNull(),
   // Patch 8: set group + equipment instance binding
-  setGroupId: uuid('set_group_id').references(() => setGroups.id),
+  setGroupId: uuid('set_group_id').references(() => setGroups.id, { onDelete: 'set null' }),
   setGroupPosition: integer('set_group_position'),
-  gymEquipmentInstanceId: uuid('gym_equipment_instance_id').references(() => gymEquipmentInstances.id),
+  gymEquipmentInstanceId: uuid('gym_equipment_instance_id').references(() => gymEquipmentInstances.id, { onDelete: 'set null' }),
   pinPosition: integer('pin_position'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

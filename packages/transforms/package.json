@@ -18,7 +18,8 @@
     "clean": "rm -rf dist .turbo *.tsbuildinfo"
   },
   "dependencies": {
-    "@gym-app/domain": "workspace:*"
+    "@gym-app/domain": "workspace:*",
+    "zod": "3.25.17"
   },
   "devDependencies": {
     "typescript": "~5.8.3"

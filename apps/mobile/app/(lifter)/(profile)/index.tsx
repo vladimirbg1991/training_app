@@ -31,6 +31,7 @@ import {
 import { usePremium } from '@/lib/purchases';
 import { useUserProfile } from '@/lib/powersync';
 import { useUserType } from '@/lib/auth/use-user-type';
+import { workoutStore } from '@/stores/workout-store';
 import { Colors } from '@/constants/colors';
 
 // ---------------------------------------------------------------------------
@@ -278,6 +279,11 @@ export default function ProfileSettingsScreen(): React.JSX.Element {
         text: 'Sign Out',
         style: 'destructive',
         onPress: () => {
+          // Reset workout state before signing out to prevent User A's
+          // in-progress workout from leaking into User B's session.
+          // reset() clears both the Zustand store and the MMKV snapshot.
+          workoutStore.getState().reset();
+
           signOut().catch(() => {
             Alert.alert('Error', 'Could not sign out. Please try again.');
           });
