@@ -16,7 +16,7 @@ export const RoutineExerciseConfigSchema = z.object({
   targetReps: z.number().int().positive(),
   targetWeightValue: z.number().nullable().default(null),
   targetWeightUnit: WeightUnitSchema.nullable().default(null),
-  restSeconds: z.number().int().positive().default(90),
+  restSeconds: z.number().int().nonnegative().default(90), // 0 is valid (supersets, circuits)
   supersetGroupId: z.string().uuid().nullable().default(null),
   notes: z.string().default(''),
 });

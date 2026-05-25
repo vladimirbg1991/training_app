@@ -3,6 +3,7 @@
  *
  * Usage:
  *   import { PowerSyncProvider } from '@/lib/powersync';
+ *   import { type ExerciseRow, type RoutineRow } from '@/lib/powersync';
  *   import { useExercises, useWorkoutSets } from '@/lib/powersync';
  */
 
@@ -43,3 +44,13 @@ export {
   // User
   useUserProfile,
 } from './hooks';
+
+// Row types for PowerSync SQLite data
+export type {
+  ExerciseRow,
+  EquipmentRow,
+  RoutineRow,
+  WorkoutSessionRow,
+  WorkoutSetRow,
+  UserRow,
+} from './row-types';

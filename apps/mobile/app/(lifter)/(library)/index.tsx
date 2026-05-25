@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, Keyboard } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { FlashList, type ListRenderItemInfo } from '@shopify/flash-list';
 import { IconSearch, IconPlus } from '@tabler/icons-react-native';
@@ -112,6 +112,8 @@ function useMuscleGroupCounts() {
 // ---------------------------------------------------------------------------
 
 export default function ExerciseLibraryScreen(): React.JSX.Element {
+  const router = useRouter();
+
   // Search with debounce
   const [inputValue, setInputValue] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
@@ -195,6 +197,7 @@ export default function ExerciseLibraryScreen(): React.JSX.Element {
             Library
           </Text>
           <Pressable
+            onPress={() => router.push('/(modals)/create-exercise')}
             className="w-11 h-11 rounded-btn-sm bg-card border-[0.5px] border-border-subtle items-center justify-center"
             accessibilityRole="button"
             accessibilityLabel="Create custom exercise"
@@ -308,6 +311,7 @@ export default function ExerciseLibraryScreen(): React.JSX.Element {
       debouncedSearch,
       muscleGroupCounts,
       exerciseList.length,
+      router,
     ],
   );
 
