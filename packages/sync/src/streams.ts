@@ -50,6 +50,8 @@ export const syncStreams: Record<string, SyncStream> = {
       `SELECT * FROM workout_sets WHERE user_id = bucket.user_id`,
       `SELECT * FROM routines WHERE user_id = bucket.user_id`,
       `SELECT * FROM exercises WHERE created_by = bucket.user_id`,
+      `SELECT * FROM set_groups WHERE user_id = bucket.user_id`,
+      `SELECT * FROM user_exercise_preferences WHERE user_id = bucket.user_id`,
     ],
     auto_subscribe: true,
   },
@@ -66,6 +68,8 @@ export const syncStreams: Record<string, SyncStream> = {
     data: [
       `SELECT * FROM exercises WHERE is_custom = false`,
       `SELECT * FROM equipment`,
+      `SELECT * FROM gym_equipment_instances`,
+      `SELECT * FROM exercise_substitutions`,
     ],
     auto_subscribe: true,
   },

@@ -2,7 +2,7 @@
  * Drizzle ORM schema for the Fitness Tracking Platform.
  *
  * Source of truth for TypeScript types derived from the Postgres schema.
- * Mirrors supabase/migrations/0001_initial.sql — keep in sync.
+ * Mirrors supabase/migrations/0001_initial.sql + 0002_patch8_smart_logger.sql — keep in sync.
  *
  * Conventions:
  *   - UUIDs for all PKs (sync-safe; never auto-increment)
@@ -21,6 +21,7 @@ import {
   timestamp,
   jsonb,
   index,
+  unique,
 } from 'drizzle-orm/pg-core';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
@@ -128,6 +129,12 @@ export const workoutSessions = pgTable('workout_sessions', {
   syncSource: text('sync_source', {
     enum: ['app', 'healthkit', 'health_connect'],
   }).notNull().default('app'),
+  // Patch 8: gym binding, subjective effort, entry source
+  gymId: uuid('gym_id'),
+  subjectiveEffort: integer('subjective_effort'), // 1-4 scale
+  entrySource: text('entry_source', {
+    enum: ['manual', 'qr_scan', 'scheduled'],
+  }).notNull().default('manual'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => ({
@@ -135,6 +142,51 @@ export const workoutSessions = pgTable('workout_sessions', {
   statusIdx: index('sessions_status_idx').on(t.status),
   startedAtIdx: index('sessions_started_at_idx').on(t.startedAt),
   routineIdIdx: index('sessions_routine_id_idx').on(t.routineId),
+  gymIdIdx: index('sessions_gym_id_idx').on(t.gymId),
+}));
+
+// ============================================================================
+// set_groups (Patch 8)
+// Links multiple workout_sets into supersets, drop sets, giant sets, circuits.
+// ============================================================================
+
+export const setGroups = pgTable('set_groups', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  sessionId: uuid('session_id').notNull().references(() => workoutSessions.id, { onDelete: 'cascade' }),
+  userId: text('user_id').notNull(),
+  kind: text('kind', {
+    enum: ['superset', 'drop_set', 'giant_set', 'circuit'],
+  }).notNull(),
+  rounds: integer('rounds'),
+  restSeconds: integer('rest_seconds'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  userIdIdx: index('set_groups_user_id_idx').on(t.userId),
+  sessionIdIdx: index('set_groups_session_id_idx').on(t.sessionId),
+}));
+
+// ============================================================================
+// gym_equipment_instances (Patch 8)
+// Specific machines at specific gyms. gym_id references gyms(id) when it ships.
+// ============================================================================
+
+export const gymEquipmentInstances = pgTable('gym_equipment_instances', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  gymId: uuid('gym_id').notNull(), // references gyms(id) when gyms table ships
+  equipmentId: uuid('equipment_id').references(() => equipment.id),
+  exerciseId: uuid('exercise_id').references(() => exercises.id),
+  displayLabel: text('display_label').notNull(),
+  pinToKg: jsonb('pin_to_kg'), // for selectorized machines: {"1": 5, "2": 10, ...}
+  status: text('status', {
+    enum: ['operational', 'maintenance', 'out_of_service'],
+  }).notNull().default('operational'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  gymIdIdx: index('gym_equip_instances_gym_id_idx').on(t.gymId),
+  equipmentIdIdx: index('gym_equip_instances_equipment_id_idx').on(t.equipmentId),
+  exerciseIdIdx: index('gym_equip_instances_exercise_id_idx').on(t.exerciseId),
 }));
 
 // ============================================================================
@@ -165,6 +217,11 @@ export const workoutSets = pgTable('workout_sets', {
     enum: ['app', 'healthkit', 'health_connect'],
   }).notNull().default('app'),
   performedAt: timestamp('performed_at', { withTimezone: true }).notNull(),
+  // Patch 8: set group + equipment instance binding
+  setGroupId: uuid('set_group_id').references(() => setGroups.id),
+  setGroupPosition: integer('set_group_position'),
+  gymEquipmentInstanceId: uuid('gym_equipment_instance_id').references(() => gymEquipmentInstances.id),
+  pinPosition: integer('pin_position'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 }, (t) => ({
@@ -172,4 +229,49 @@ export const workoutSets = pgTable('workout_sets', {
   sessionIdIdx: index('sets_session_id_idx').on(t.sessionId),
   exerciseIdIdx: index('sets_exercise_id_idx').on(t.exerciseId),
   performedAtIdx: index('sets_performed_at_idx').on(t.performedAt),
+  setGroupIdIdx: index('sets_set_group_id_idx').on(t.setGroupId),
+  gymEquipmentInstanceIdIdx: index('sets_gym_equipment_instance_id_idx').on(t.gymEquipmentInstanceId),
+}));
+
+// ============================================================================
+// user_exercise_preferences (Patch 8)
+// Per-user per-exercise increment overrides and defaults.
+// ============================================================================
+
+export const userExercisePreferences = pgTable('user_exercise_preferences', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: text('user_id').notNull(),
+  exerciseId: uuid('exercise_id').notNull().references(() => exercises.id),
+  defaultWeightIncrement: real('default_weight_increment'),
+  defaultIncrementUnit: text('default_increment_unit', {
+    enum: ['kg', 'lb', 'pin', 'plate'],
+  }),
+  defaultRepsIncrement: integer('default_reps_increment').default(1),
+  defaultRestSeconds: integer('default_rest_seconds'),
+  notes: text('notes'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  userIdIdx: index('user_exercise_prefs_user_id_idx').on(t.userId),
+  exerciseIdIdx: index('user_exercise_prefs_exercise_id_idx').on(t.exerciseId),
+  userExerciseUniq: unique('user_exercise_preferences_user_id_exercise_id_key').on(t.userId, t.exerciseId),
+}));
+
+// ============================================================================
+// exercise_substitutions (Patch 8)
+// Swap suggestions for pre-flight check (catalog data, read-only for users).
+// ============================================================================
+
+export const exerciseSubstitutions = pgTable('exercise_substitutions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  exerciseId: uuid('exercise_id').notNull().references(() => exercises.id),
+  substituteId: uuid('substitute_id').notNull().references(() => exercises.id),
+  similarityScore: real('similarity_score').notNull().default(0.5),
+  reasonLabel: text('reason_label').notNull().default('similar pattern'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+}, (t) => ({
+  exerciseIdIdx: index('exercise_subs_exercise_id_idx').on(t.exerciseId),
+  substituteIdIdx: index('exercise_subs_substitute_id_idx').on(t.substituteId),
+  exerciseSubstituteUniq: unique('exercise_substitutions_exercise_id_substitute_id_key').on(t.exerciseId, t.substituteId),
 }));

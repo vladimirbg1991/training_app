@@ -13,8 +13,10 @@
   },
   "_versionNote": "Versions are approximate for Expo SDK 54. Run `npx expo install --fix` after initial install to align all Expo package versions with the SDK.",
   "dependencies": {
+    "@journeyapps/wa-sqlite": "1.1.0",
     "@clerk/clerk-expo": "2.10.0",
     "@sentry/react-native": "6.5.0",
+    "@powersync/react-native": "1.15.0",
     "@gym-app/domain": "workspace:*",
     "@gym-app/fitness-logic": "workspace:*",
     "@gym-app/sync": "workspace:*",

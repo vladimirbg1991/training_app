@@ -10,6 +10,7 @@ import * as Sentry from '@sentry/react-native';
 import * as SplashScreen from 'expo-splash-screen';
 import { tokenCache } from '@/lib/auth/token-cache';
 import { useUserType } from '@/lib/auth/use-user-type';
+import { PowerSyncProvider } from '@/lib/powersync';
 
 // Keep splash screen visible while Clerk loads
 SplashScreen.preventAutoHideAsync();
@@ -97,8 +98,10 @@ function RootLayout(): React.JSX.Element {
       <QueryClientProvider client={queryClient}>
         <GestureHandlerRootView style={{ flex: 1 }}>
           <SafeAreaProvider>
-            <StatusBar style="light" />
-            <AuthGate />
+            <PowerSyncProvider>
+              <StatusBar style="light" />
+              <AuthGate />
+            </PowerSyncProvider>
           </SafeAreaProvider>
         </GestureHandlerRootView>
       </QueryClientProvider>
