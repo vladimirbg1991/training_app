@@ -29,16 +29,12 @@
     "plugins": [
       "expo-router",
       "@sentry/react-native",
-      "expo-font",
-      "expo-haptics",
-      "expo-secure-store",
       [
         "expo-splash-screen",
         {
           "backgroundColor": "#0A1410"
         }
-      ],
-      "react-native-mmkv"
+      ]
     ],
     "experiments": {
       "typedRoutes": true
