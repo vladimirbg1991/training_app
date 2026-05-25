@@ -1,87 +1,165 @@
-import { View, Text, Pressable } from 'react-native';
-import { useRouter } from 'expo-router';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useState } from 'react';
+import { View, Text, Pressable, ActivityIndicator, Alert } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useUser } from '@clerk/clerk-expo';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  IconChevronLeft,
+  IconBarbell,
+  IconClipboardList,
+  IconBuilding,
+  IconCircleCheck,
+  IconCircle,
+} from '@tabler/icons-react-native';
+import { Colors } from '@/constants/colors';
+import type { UserType } from '@gym-app/domain';
 
-type UserType = 'lifter' | 'trainer' | 'gym';
-
-const USER_TYPES: { key: UserType; title: string; description: string; icon: string }[] = [
+const USER_TYPE_OPTIONS: {
+  key: UserType;
+  title: string;
+  subtitle: string;
+  Icon: React.ComponentType<{ size: number; color: string }>;
+}[] = [
   {
     key: 'lifter',
     title: 'Lifter',
-    description: 'Track your own workouts and progress.',
-    icon: '\u{1F4AA}',
+    subtitle: 'Track your own workouts and progress.',
+    Icon: IconBarbell,
   },
   {
     key: 'trainer',
-    title: 'Trainer',
-    description: 'Build programs and manage clients.',
-    icon: '\u{1F4CB}',
+    title: 'Personal trainer',
+    subtitle: 'Build programs and manage clients.',
+    Icon: IconClipboardList,
   },
   {
     key: 'gym',
-    title: 'Gym Operator',
-    description: 'Manage your gym, QR codes, and members.',
-    icon: '\u{1F3E2}',
+    title: 'Gym operator',
+    subtitle: 'Manage your gym, QR codes, and members.',
+    Icon: IconBuilding,
   },
 ];
 
+/** Route for each user type after onboarding selection. */
+const USER_TYPE_ROUTES: Record<UserType, string> = {
+  lifter: '/(lifter)/(home)',
+  trainer: '/(lifter)/(home)', // trainer/gym share the lifter shell for v0
+  gym: '/(lifter)/(home)',
+};
+
 export default function UserTypeScreen() {
   const router = useRouter();
-  const [selected, setSelected] = useState<UserType | null>(null);
+  const { user } = useUser();
+  const [selected, setSelected] = useState<UserType>('lifter');
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  async function handleContinue() {
+    if (!user) return;
+
+    setIsUpdating(true);
+    try {
+      await user.update({
+        unsafeMetadata: {
+          ...user.unsafeMetadata,
+          userType: selected,
+        },
+      });
+      router.replace(USER_TYPE_ROUTES[selected]);
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error ? error.message : 'Something went wrong. Please try again.';
+      Alert.alert('Error', message);
+    } finally {
+      setIsUpdating(false);
+    }
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-page">
-      <View className="flex-1 px-6 pt-8">
-        <Pressable onPress={() => router.back()} className="mb-6">
-          <Text className="text-label text-body-sm">{'\u2190'} Back</Text>
-        </Pressable>
+      <View className="flex-1 px-6 pt-4">
+        {/* Header: back + progress */}
+        <View className="flex-row items-center justify-between mb-8">
+          <Pressable
+            onPress={() => router.back()}
+            hitSlop={12}
+            className="min-h-tap min-w-[44px] justify-center"
+          >
+            <IconChevronLeft size={24} color={Colors.label} />
+          </Pressable>
 
-        <Text className="text-label text-label-xs uppercase tracking-widest mb-1">
-          Screen 1b
-        </Text>
-        <Text className="text-primary text-title mb-2">
-          How will you use Pulse?
+          {/* Progress dots: 3 total, dot 1 active */}
+          <View className="flex-row items-center gap-2">
+            <View className="w-2 h-2 rounded-full bg-accent" />
+            <View className="w-2 h-2 rounded-full bg-stat-tile" />
+            <View className="w-2 h-2 rounded-full bg-stat-tile" />
+          </View>
+
+          {/* Spacer to balance the back button */}
+          <View className="min-w-[44px]" />
+        </View>
+
+        {/* Headline */}
+        <Text className="text-primary text-[22px] font-medium mb-1">
+          How will you use this?
         </Text>
         <Text className="text-ambient text-body-sm mb-8">
-          Choose your role. You can change this later.
+          Pick one. You can change it later.
         </Text>
 
         {/* Selection cards */}
-        {USER_TYPES.map((type) => (
-          <Pressable
-            key={type.key}
-            onPress={() => setSelected(type.key)}
-            className={`rounded-card p-card-pad mb-card-gap flex-row items-center ${
-              selected === type.key ? 'bg-stat-tile border border-accent' : 'bg-card border border-border-subtle'
-            }`}
-          >
-            <Text className="text-2xl mr-3">{type.icon}</Text>
-            <View className="flex-1">
-              <Text className="text-primary text-subtitle">{type.title}</Text>
-              <Text className="text-ambient text-body-sm">{type.description}</Text>
-            </View>
-          </Pressable>
-        ))}
+        {USER_TYPE_OPTIONS.map((option) => {
+          const isSelected = selected === option.key;
+
+          return (
+            <Pressable
+              key={option.key}
+              onPress={() => setSelected(option.key)}
+              className={`flex-row items-center rounded-card p-card-pad mb-card-gap h-20 ${
+                isSelected
+                  ? 'bg-hero border-[1.5px] border-border-active'
+                  : 'bg-card border-[0.5px] border-border-subtle'
+              }`}
+            >
+              {/* Icon tile */}
+              <View
+                className={`w-9 h-9 rounded-lg items-center justify-center mr-3 ${
+                  isSelected ? 'bg-accent' : 'bg-stat-tile'
+                }`}
+              >
+                <option.Icon
+                  size={20}
+                  color={isSelected ? Colors.accentText : Colors.label}
+                />
+              </View>
+
+              {/* Text */}
+              <View className="flex-1">
+                <Text className="text-primary text-subtitle">{option.title}</Text>
+                <Text className="text-ambient text-body-sm">{option.subtitle}</Text>
+              </View>
+
+              {/* Selection indicator */}
+              {isSelected ? (
+                <IconCircleCheck size={22} color={Colors.label} />
+              ) : (
+                <IconCircle size={22} color={Colors.borderSubtle} />
+              )}
+            </Pressable>
+          );
+        })}
 
         {/* Continue button */}
         <View className="mt-auto mb-8">
           <Pressable
-            onPress={() => {
-              // TODO: Store user type in Clerk metadata, navigate to onboarding
-              if (selected) {
-                router.push('/(lifter)/(home)');
-              }
-            }}
-            className={`rounded-btn min-h-btn items-center justify-center ${
-              selected ? 'bg-accent' : 'bg-card'
-            }`}
+            onPress={handleContinue}
+            disabled={isUpdating}
+            className="bg-accent rounded-btn min-h-btn items-center justify-center flex-row"
           >
-            <Text
-              className={`text-subtitle ${selected ? 'text-accent-text' : 'text-ambient'}`}
-            >
-              Continue
-            </Text>
+            {isUpdating ? (
+              <ActivityIndicator size="small" color={Colors.accentText} />
+            ) : (
+              <Text className="text-accent-text text-subtitle">Continue</Text>
+            )}
           </Pressable>
         </View>
       </View>

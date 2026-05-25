@@ -19,4 +19,7 @@ config.resolver.nodeModulesPaths = [
 // pnpm monorepo: handle workspace symlinks
 config.resolver.disableHierarchicalLookup = true;
 
+// Support package.json "exports" field (used by workspace packages)
+config.resolver.unstable_enablePackageExports = true;
+
 module.exports = withNativeWind(config, { input: './global.css' });

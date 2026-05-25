@@ -48,3 +48,16 @@ coverage/
 
 # Sentry
 .sentryclirc
+
+# Certificates and credentials
+*.pem
+*.p12
+*.key
+*.keystore
+*.jks
+credentials.json
+google-services.json
+GoogleService-Info.plist
+
+# EAS
+eas.json.bak

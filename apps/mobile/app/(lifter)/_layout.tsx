@@ -1,22 +1,14 @@
 import { Tabs } from 'expo-router';
-import { Text } from 'react-native';
+import {
+  IconHome,
+  IconBook2,
+  IconBarbell,
+  IconChartLine,
+  IconUser,
+} from '@tabler/icons-react-native';
 import { Colors } from '@/constants/colors';
 
-function TabIcon({ symbol, focused }: { symbol: string; focused: boolean }) {
-  return (
-    <Text
-      style={{
-        fontSize: 20,
-        color: focused ? Colors.accent : Colors.label,
-        marginTop: 2,
-      }}
-    >
-      {symbol}
-    </Text>
-  );
-}
-
-export default function LifterLayout() {
+export default function LifterLayout(): React.JSX.Element {
   return (
     <Tabs
       screenOptions={{
@@ -38,45 +30,37 @@ export default function LifterLayout() {
         name="(home)"
         options={{
           title: 'Home',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon symbol={'\u2302'} focused={focused} />
-          ),
+          unmountOnBlur: false,
+          tabBarIcon: ({ color }) => <IconHome size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="(library)"
         options={{
           title: 'Library',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon symbol={'\u{1F4D6}'} focused={focused} />
-          ),
+          tabBarIcon: ({ color }) => <IconBook2 size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="(workout)"
         options={{
           title: 'Workout',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon symbol={'\u{1F3CB}'} focused={focused} />
-          ),
+          unmountOnBlur: false,
+          tabBarIcon: ({ color }) => <IconBarbell size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="(progress)"
         options={{
           title: 'Progress',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon symbol={'\u{1F4C8}'} focused={focused} />
-          ),
+          tabBarIcon: ({ color }) => <IconChartLine size={22} color={color} />,
         }}
       />
       <Tabs.Screen
         name="(profile)"
         options={{
           title: 'Profile',
-          tabBarIcon: ({ focused }) => (
-            <TabIcon symbol={'\u{1F464}'} focused={focused} />
-          ),
+          tabBarIcon: ({ color }) => <IconUser size={22} color={color} />,
         }}
       />
     </Tabs>
