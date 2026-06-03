@@ -10,6 +10,7 @@ import {
   PostHogProvider as PHProvider,
   usePostHog,
 } from 'posthog-react-native';
+import { MMKV } from 'react-native-mmkv';
 import { useAuth } from '@clerk/expo';
 
 // ---------------------------------------------------------------------------
@@ -41,6 +42,28 @@ const POSTHOG_HOST = process.env.EXPO_PUBLIC_POSTHOG_HOST;
 
 /** True when both the project key and host are present. */
 const isConfigured = Boolean(POSTHOG_KEY && POSTHOG_HOST);
+
+// ---------------------------------------------------------------------------
+// Persistence
+// ---------------------------------------------------------------------------
+
+/**
+ * MMKV-backed storage for PostHog's event queue and feature-flag cache.
+ *
+ * Without this, posthog-react-native falls back to its "optimistic" storage,
+ * which uses `expo-file-system`'s legacy `readAsStringAsync`/`writeAsStringAsync`.
+ * Those throw under Expo SDK 55 (the API was deprecated), surfacing as repeated
+ * "Uncaught (in promise)" errors. MMKV is the app's mandated synchronous store,
+ * so we route PostHog through it and avoid the deprecated file API entirely.
+ */
+const posthogStorage = new MMKV({ id: 'posthog' });
+
+const posthogCustomStorage = {
+  getItem: (key: string): string | null => posthogStorage.getString(key) ?? null,
+  setItem: (key: string, value: string): void => {
+    posthogStorage.set(key, value);
+  },
+};
 
 // ---------------------------------------------------------------------------
 // Analytics helper
@@ -186,6 +209,8 @@ export function AnalyticsProvider({
         // Disable automatic screen tracking — we fire `screen_viewed` manually
         // to keep event names in the AnalyticsEvent union.
         captureNativeAppLifecycleEvents: false,
+        // Persist via MMKV instead of the deprecated expo-file-system API.
+        customStorage: posthogCustomStorage,
       }}
       autocapture={false}
     >

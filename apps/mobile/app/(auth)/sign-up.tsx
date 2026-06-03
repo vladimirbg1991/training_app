@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
@@ -12,9 +12,11 @@ import {
   Keyboard,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useSignUp } from '@clerk/expo';
+// See sign-in.tsx: the default `useSignUp` is the new signals API in
+// @clerk/expo 3.2.16. The classic resource API (create/prepareEmailAddressVerification/
+// attemptEmailAddressVerification + isLoaded/setActive) lives behind '/legacy'.
+import { useSignUp } from '@clerk/expo/legacy';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import * as WebBrowser from 'expo-web-browser';
 import { IconChevronLeft } from '@tabler/icons-react-native';
 import { Colors } from '@/constants/colors';
 import { getAuthErrorMessage } from '@/lib/auth/get-auth-error-message';
@@ -29,14 +31,6 @@ export default function SignUpScreen() {
   const [pendingVerification, setPendingVerification] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // ── Warm up web browser for potential OAuth flows ─────────────────────
-  useEffect(() => {
-    WebBrowser.warmUpAsync();
-    return () => {
-      WebBrowser.coolDownAsync();
-    };
-  }, []);
-
   async function handleSignUp() {
     if (!isLoaded || !email.trim()) return;
 
@@ -47,7 +41,25 @@ export default function SignUpScreen() {
 
     setLoading(true);
     try {
-      await signUp.create({ emailAddress: email.trim() });
+      const created = await signUp.create({ emailAddress: email.trim() });
+
+      // Passwordless instances return `missing_requirements` with only the
+      // email left to verify. If anything OTHER than the email verification
+      // is still required (e.g. the dashboard still requires a password),
+      // surface it instead of sending the user into a code screen that can
+      // never complete.
+      const blockingFields = (created.missingFields ?? []).filter(
+        (f) => f !== 'email_address',
+      );
+      if (blockingFields.length > 0) {
+        Alert.alert(
+          'Sign-up not available',
+          `This account setup requires: ${blockingFields.join(', ')}. ` +
+            'Update the Clerk instance to passwordless email-code sign-up.',
+        );
+        return;
+      }
+
       await signUp.prepareEmailAddressVerification({ strategy: 'email_code' });
       setPendingVerification(true);
     } catch (err: unknown) {
@@ -66,6 +78,15 @@ export default function SignUpScreen() {
       if (result.status === 'complete' && result.createdSessionId) {
         await setActive({ session: result.createdSessionId });
         router.replace('/(auth)/user-type');
+      } else {
+        // Email verified but the sign-up still isn't complete — never stall
+        // silently. This happens when the instance requires more than email
+        // (e.g. a password), so the account can't finish here.
+        const missing = (result.missingFields ?? []).join(', ') || 'unknown';
+        Alert.alert(
+          'Almost there',
+          `Your email is verified but the account can't be completed (still needs: ${missing}).`,
+        );
       }
     } catch (err: unknown) {
       const message = getAuthErrorMessage(err);

@@ -110,13 +110,30 @@ export function PowerSyncProvider({ children }: PowerSyncProviderProps): React.J
     const connector = new SupabasePowerSyncConnector(fetchToken);
 
     const connect = async (): Promise<void> => {
+      // Actionable pre-flight: the #1 cause of "signed in but the app is empty"
+      // is a missing/misconfigured Clerk JWT template named 'supabase'. Surface
+      // it loudly (always, not just __DEV__) so it isn't a silent dead-end.
+      // This does NOT block the app — local-first reads keep working offline.
+      try {
+        const token = await fetchToken();
+        if (!token) {
+          console.error(
+            "PowerSync: Clerk getToken({ template: 'supabase' }) returned null. " +
+              "Sync will not start and the app will appear empty. Create a JWT " +
+              "template named 'supabase' in the Clerk dashboard (sub = {{user.id}}).",
+          );
+        }
+      } catch (tokenErr) {
+        console.error('PowerSync: failed to obtain Clerk token before connect:', tokenErr);
+      }
+
       try {
         await db.connect(connector);
         connectedRef.current = true;
       } catch (error) {
-        if (__DEV__) {
-          console.error('PowerSync connect failed:', error);
-        }
+        // Unconditional — a swallowed connect error means data silently never
+        // loads, which is far harder to diagnose than a noisy log.
+        console.error('PowerSync connect failed:', error);
       }
     };
 

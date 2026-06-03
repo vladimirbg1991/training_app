@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Text, Pressable, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useUser } from '@clerk/expo';
+import { usePowerSync } from '@powersync/react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import {
   IconChevronLeft,
@@ -44,6 +45,7 @@ const USER_TYPE_OPTIONS: {
 export default function UserTypeScreen() {
   const router = useRouter();
   const { user } = useUser();
+  const db = usePowerSync();
   const [selected, setSelected] = useState<UserType>('lifter');
   const [isUpdating, setIsUpdating] = useState(false);
 
@@ -52,12 +54,39 @@ export default function UserTypeScreen() {
 
     setIsUpdating(true);
     try {
+      // 1. Write the canonical users row to local SQLite FIRST (local-first:
+      //    never depend on the network for a user input). PowerSync syncs it
+      //    up via the user_data stream. This is the row every user_data query
+      //    keys off (SELECT * FROM users WHERE id = bucket.user_id).
+      const now = new Date().toISOString();
+      const existing = await db.getOptional<{ id: string }>(
+        'SELECT id FROM users WHERE id = ?',
+        [user.id],
+      );
+
+      if (existing) {
+        await db.execute(
+          'UPDATE users SET user_type = ?, updated_at = ? WHERE id = ?',
+          [selected, now, user.id],
+        );
+      } else {
+        await db.execute(
+          `INSERT INTO users
+             (id, user_type, display_name, default_unit, default_rest_seconds, onboarding_completed, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          [user.id, selected, user.fullName ?? null, 'kg', 90, 1, now, now],
+        );
+      }
+
+      // 2. Mirror the choice into Clerk metadata — this is what AuthGate reads
+      //    for routing (useUserType()).
       await user.update({
         unsafeMetadata: {
           ...user.unsafeMetadata,
           userType: selected,
         },
       });
+
       router.replace('/(auth)/health-consent');
     } catch (error: unknown) {
       const message =

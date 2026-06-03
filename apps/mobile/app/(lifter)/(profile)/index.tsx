@@ -13,7 +13,7 @@ import {
   IconShieldCheck,
   IconRuler,
   IconClock,
-  IconVibrate,
+  IconDeviceMobileVibration,
   IconHeartRateMonitor,
   IconDownload,
   IconShieldLock,
@@ -522,7 +522,7 @@ export default function ProfileSettingsScreen(): React.JSX.Element {
 
           {/* Haptics toggle */}
           <SettingsRow
-            icon={<IconVibrate size={16} color={Colors.label} />}
+            icon={<IconDeviceMobileVibration size={16} color={Colors.label} />}
             label="Haptic feedback"
             trailing={
               <Switch

@@ -11,7 +11,15 @@ export function getAuthErrorMessage(err: unknown): string {
       case 'form_identifier_exists':
         return 'An account with this email already exists. Try signing in.';
       case 'form_code_incorrect':
+      case 'verification_failed':
         return 'Incorrect verification code. Please try again.';
+      case 'verification_expired':
+        return 'That code expired. Request a new one.';
+      case 'form_identifier_not_found_secondary':
+      case 'strategy_for_user_invalid':
+        return 'That sign-in method isn’t available for this account.';
+      case 'form_param_format_invalid':
+        return 'Please check the format and try again.';
     }
   }
   return 'Something went wrong. Please try again.';

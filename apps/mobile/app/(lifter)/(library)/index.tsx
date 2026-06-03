@@ -85,6 +85,7 @@ function useMuscleGroupCounts() {
       shoulders: 0,
       arms: 0,
       core: 0,
+      full_body: 0,
     };
 
     for (const row of raw) {
@@ -270,7 +271,7 @@ export default function ExerciseLibraryScreen(): React.JSX.Element {
                   accessibilityLabel={`Browse ${group} exercises`}
                 >
                   <Text className="text-primary text-subtitle capitalize">
-                    {group}
+                    {group.replace(/_/g, ' ')}
                   </Text>
                   <Text className="text-label text-label-xs mt-1">
                     {muscleGroupCounts[group]} exercises
