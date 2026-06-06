@@ -5,7 +5,7 @@ import {
   EQUIPMENT_MAP,
   MUSCLE_NAME_MAP,
   TARGET_MUSCLE_MAP,
-} from './exercisedb-maps.js';
+} from './exercisedb-maps';
 
 // ============================================================================
 // Raw API response schemas (Zod)

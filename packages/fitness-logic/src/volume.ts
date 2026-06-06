@@ -1,4 +1,4 @@
-import { normalizeToKg, type WeightUnit } from './unit-conversion.js';
+import { normalizeToKg, type WeightUnit } from './unit-conversion';
 
 interface SetData {
   weightValue: number | null;

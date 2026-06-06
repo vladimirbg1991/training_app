@@ -5,14 +5,14 @@ export {
   WeightSchema, type Weight,
   DistanceSchema, type Distance,
   DEFAULT_WEIGHT_UNIT, DEFAULT_DISTANCE_UNIT,
-} from './units.js';
+} from './units';
 
 // User
 export {
   UserTypeSchema, type UserType,
   UserSchema, type User,
   CreateUserSchema, type CreateUser,
-} from './user.js';
+} from './user';
 
 // Exercise & Equipment
 export {
@@ -21,7 +21,7 @@ export {
   ExerciseSchema, type Exercise,
   CreateCustomExerciseSchema, type CreateCustomExercise,
   MUSCLE_GROUPS, type MuscleGroup,
-} from './exercise.js';
+} from './exercise';
 
 // Routines
 export {
@@ -29,7 +29,7 @@ export {
   RoutineExerciseConfigSchema, type RoutineExerciseConfig,
   RoutineSchema, type Routine,
   CreateRoutineSchema, type CreateRoutine,
-} from './routine.js';
+} from './routine';
 
 // Workouts
 export {
@@ -41,4 +41,4 @@ export {
   LogSetSchema, type LogSet,
   SetGroupKindSchema, type SetGroupKind,
   SetGroupSchema, type SetGroup,
-} from './workout.js';
+} from './workout';

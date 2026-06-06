@@ -1,5 +1,5 @@
-import { estimateOneRepMax } from './one-rep-max.js';
-import { normalizeToKg } from './unit-conversion.js';
+import { estimateOneRepMax } from './one-rep-max';
+import { normalizeToKg } from './unit-conversion';
 
 interface HistoricalSet {
   weight_value: number | null;

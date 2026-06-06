@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { WeightUnitSchema } from './units.js';
+import { WeightUnitSchema } from './units';
 
 // ============================================================================
 // Routines — user-created workout templates

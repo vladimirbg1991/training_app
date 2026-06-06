@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { WeightUnitSchema, DistanceUnitSchema } from './units.js';
+import { WeightUnitSchema, DistanceUnitSchema } from './units';
 
 // ============================================================================
 // Workout sessions and sets — the core data model

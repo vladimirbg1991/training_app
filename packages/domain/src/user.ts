@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { WeightUnitSchema } from './units.js';
+import { WeightUnitSchema } from './units';
 
 // ============================================================================
 // User types and preferences
@@ -8,7 +8,10 @@ import { WeightUnitSchema } from './units.js';
 export const UserTypeSchema = z.enum(['lifter', 'trainer', 'gym']);
 export type UserType = z.infer<typeof UserTypeSchema>;
 
-export const UserSchema = z.object({
+// Base object shape. Keep this as a ZodObject so `.pick`/`.omit`/`.extend`
+// remain available — those methods do NOT exist on the ZodEffects returned
+// by `.refine()`, which is why UserSchema itself cannot be picked from.
+const UserShape = z.object({
   id: z.string(), // Clerk sub claim
   userType: UserTypeSchema,
   displayName: z.string().nullable(),
@@ -19,7 +22,9 @@ export const UserSchema = z.object({
   currentBodyweightUnit: WeightUnitSchema.nullable(),
   createdAt: z.date(),
   updatedAt: z.date(),
-}).refine(
+});
+
+export const UserSchema = UserShape.refine(
   (user) => {
     // Bodyweight value and unit must be both present or both absent
     const hasValue = user.currentBodyweightValue !== null;
@@ -30,7 +35,7 @@ export const UserSchema = z.object({
 );
 export type User = z.infer<typeof UserSchema>;
 
-export const CreateUserSchema = UserSchema.pick({
+export const CreateUserSchema = UserShape.pick({
   id: true,
   userType: true,
   displayName: true,

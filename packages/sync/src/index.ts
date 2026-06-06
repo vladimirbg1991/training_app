@@ -1,3 +1,3 @@
-export * from './schema.js';
-export { syncStreams } from './streams.js';
-export type { SyncStream } from './streams.js';
+export * from './schema';
+export { syncStreams } from './streams';
+export type { SyncStream } from './streams';
